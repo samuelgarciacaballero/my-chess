@@ -17,6 +17,7 @@ function getItemStyles(currentOffset: { x: number; y: number } | null) {
   }
   const { x, y } = currentOffset;
   const transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+
   return {
     transform,
     WebkitTransform: transform,
@@ -29,6 +30,7 @@ const CustomDragLayer: React.FC = () => {
     item: monitor.getItem() as { row: number; col: number } | null,
     itemType: monitor.getItemType(),
     currentOffset: monitor.getClientOffset(),
+
     isDragging: monitor.isDragging(),
   }));
 
