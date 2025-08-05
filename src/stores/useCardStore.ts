@@ -116,7 +116,6 @@ interface CardState {
 
   drawSpecificToHand: (id: string) => void;
   drawSpecificToOpponent: (id: string) => void;
-
 }
 
 export const useCardStore = create<CardState>((set) => ({
@@ -172,22 +171,17 @@ export const useCardStore = create<CardState>((set) => ({
 
   clearOpponentHand: () => set({ opponentHand: [] }),
 
-  drawSpecificToHand: id =>
-    set(state => {
+  drawSpecificToHand: (id) =>
+    set((state) => {
       if (state.hand.length >= 3) return {};
-      const card = state.deck.find(c => c.id === id);
-      return card
-        ? { hand: [...state.hand, card] }
-        : {};
+      const card = state.deck.find((c) => c.id === id);
+      return card ? { hand: [...state.hand, card] } : {};
     }),
-  
-  drawSpecificToOpponent: id =>
-    set(state => {
+
+  drawSpecificToOpponent: (id) =>
+    set((state) => {
       if (state.opponentHand.length >= 3) return {};
-      const card = state.deck.find(c => c.id === id);
-      return card
-        ? { opponentHand: [...state.opponentHand, card] }
-        : {};
+      const card = state.deck.find((c) => c.id === id);
+      return card ? { opponentHand: [...state.opponentHand, card] } : {};
     }),
-  
 }));
