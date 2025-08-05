@@ -10,3 +10,13 @@ export function toSquare(row: number, col: number): string {
   const rank = 8 - row;
   return `${file}${rank}`;
 }
+
+/**
+ * Convierte una notación algebraica (p.e. "e2") en sus índices de fila y
+ * columna (0–7). La fila 0 corresponde al rango 8 y la columna 0 al file "a".
+ */
+export function fromSquare(square: string): { row: number; col: number } {
+  const file = square[0];
+  const rank = parseInt(square[1], 10);
+  return { row: 8 - rank, col: files.indexOf(file) };
+}

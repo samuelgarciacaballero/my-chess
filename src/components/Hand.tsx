@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { useCardStore } from '../stores/useCardStore';
 import CardView from './Card';
+import './Hand.css';
 
 const Hand: React.FC = () => {
   const hand = useCardStore(state => state.hand);
@@ -16,8 +17,8 @@ const Hand: React.FC = () => {
   }, [drawCard]);
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-      {hand.map(card => (
+    <div className="hand">
+      {hand.map((card) => (
         <CardView
           key={card.id}
           card={card}

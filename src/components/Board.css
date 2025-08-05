@@ -1,23 +1,18 @@
 .board {
-    display: grid;
-    grid-template-columns: repeat(8, 60px);
-    grid-template-rows: repeat(8, 60px);
-    border: 2px solid #333;
-    width: max-content;
-    margin: 1rem auto;
-  }
-  
-  .square {
-    width: 60px;
-    height: 60px;
-  }
-  
-  /* Ahora usamos dos clases para diferenciar colores */
-  .square.light {
-    background-color: #f0d9b5;
-  }
-  
-  .square.dark {
-    background-color: #b58863;
-  }
+  display: grid;
+  grid-template-columns: repeat(8, var(--square));
+  grid-template-rows: repeat(8, var(--square));
+  border: 2px solid #333;
+  width: max-content;
+  margin: 1rem auto;
+}
+
+/* Colores base, dimensiones en Square.css */
+.square.light {
+  background-color: #f0d9b5;
+}
+
+.square.dark {
+  background-color: #b58863;
+}
   

@@ -8,6 +8,8 @@ import FaceUpCard from "./components/FaceUpCard";
 import Notification from "./components/Notification";
 import { useCardStore } from "./stores/useCardStore";
 import PromotionModal from "./components/PromotionModal";
+import CustomDragLayer from "./components/CustomDragLayer";
+import "./App.css";
 
 // import type { Card } from "./stores/useCardStore";
 
@@ -22,8 +24,9 @@ const App: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 960, margin: "0 auto", padding: "1rem", position: "relative" }}>
-      {/* Notificaciones flotantes */}
+      {/* Notificaciones flotantes y capa de arrastre personalizada */}
       <Notification />
+      <CustomDragLayer />
 
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h1>My Chess MVP</h1>
@@ -36,7 +39,7 @@ const App: React.FC = () => {
 
       <TurnIndicator />
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div className="board-area">
         <Board />
         {initialFaceUp && <FaceUpCard card={initialFaceUp} />}
       </div>
