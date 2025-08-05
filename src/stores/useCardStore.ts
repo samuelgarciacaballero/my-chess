@@ -35,9 +35,16 @@ const initialDeck: Card[] = [
   {
     id: "boquete",
     name: "Boquete",
-    description: "Bloqueas una casilla rival durante su turno",
+    description: "Bloqueas una casilla durante el turno del rival. Ninguna ficha puede ocupar esa casilla.",
     rarity: "normal",
     effectKey: "blockSquare",
+  },
+  {
+    id: "bqr",
+    name: "Boquete (raro)",
+    description: "Bloqueas una casilla durante el turno del rival. Ninguna ficha puede caer ni pasar por encima",
+    rarity: "rare",
+    effectKey: "blockSquareRare",
   },
   {
     id: "galope",

@@ -45,7 +45,7 @@ const Square: React.FC<SquareProps> = ({ row, col, children }) => {
 
   // Resaltado de última jugada
   const isFrom = lastMove.from === sq;
-  const isTo = lastMove.to === sq;
+  const isTo   = lastMove.to   === sq;
   const lastCls = isFrom ? " last-from" : isTo ? " last-to" : "";
 
   const className = `square ${isLight ? "light" : "dark"}${highlight}${lastCls}`;
@@ -56,17 +56,19 @@ const Square: React.FC<SquareProps> = ({ row, col, children }) => {
       <div className={`blocked-overlay ${blockedBy}`}>✕</div>
     ) : null;
 
-  // Overlay de preview para “Boquete”
+  // Overlay de preview para “Boquete” normal o raro
+  const isBlockingCard =
+    selectedCard?.effectKey === "blockSquare" ||
+    selectedCard?.effectKey === "blockSquareRare";
+
   const previewOverlay =
-    hover &&
-    selectedCard?.effectKey === "blockSquare" &&
-    !blockedSquare ? (
+    hover && isBlockingCard && !blockedSquare ? (
       <div className="blocked-overlay preview">✕</div>
     ) : null;
 
-  // Click para aplicar “Boquete”
+  // Click para aplicar “Boquete” normal o raro
   const handleClick = () => {
-    if (selectedCard?.effectKey === "blockSquare") {
+    if (isBlockingCard) {
       blockSquareAt(sq as ChessSquare);
     }
   };
