@@ -1,18 +1,19 @@
 // src/components/Piece.tsx
-import React, { useEffect, useRef } from 'react';
-import { useDrag } from 'react-dnd';
-import { getEmptyImage } from 'react-dnd-html5-backend';
-import { useChessStore } from '../stores/useChessStore';
-import type { SquarePiece } from '../stores/useChessStore';
-import { fromSquare } from '../utils/coords';
+import React, { useEffect, useRef } from "react";
+import { useDrag } from "react-dnd";
+import { getEmptyImage } from "react-dnd-html5-backend";
+import { useChessStore } from "../stores/useChessStore";
+import type { SquarePiece } from "../stores/useChessStore";
+import { fromSquare } from "../utils/coords";
+import "./Piece.css";
 
-const unicodeMap: Record<string, Record<'w' | 'b', string>> = {
-  p: { w: '♙', b: '♟' },
-  r: { w: '♖', b: '♜' },
-  n: { w: '♘', b: '♞' },
-  b: { w: '♗', b: '♝' },
-  q: { w: '♕', b: '♛' },
-  k: { w: '♔', b: '♚' },
+const unicodeMap: Record<string, Record<"w" | "b", string>> = {
+  p: { w: "♙", b: "♟" },
+  r: { w: "♖", b: "♜" },
+  n: { w: "♘", b: "♞" },
+  b: { w: "♗", b: "♝" },
+  q: { w: "♕", b: "♛" },
+  k: { w: "♔", b: "♚" },
 };
 
 interface PieceProps {
@@ -25,7 +26,7 @@ const Piece: React.FC<PieceProps> = ({ row, col }) => {
   const lastMove = useChessStore((s) => s.lastMove);
 
   const [{ isDragging }, dragRef, preview] = useDrag({
-    type: 'piece',
+    type: "piece",
     item: { row, col },
     collect: (monitor) => ({ isDragging: monitor.isDragging() }),
     canDrag: () => !!board[row][col],
@@ -49,12 +50,11 @@ const Piece: React.FC<PieceProps> = ({ row, col }) => {
       const dx = (from.col - to.col) * size;
       const dy = (from.row - to.row) * size;
       const el = pieceRef.current;
-      el.style.transition = 'none';
-      el.style.transform = `translate(${dx}px, ${dy}px)`;
-      requestAnimationFrame(() => {
-        el.style.transition = 'transform 0.3s ease';
-        el.style.transform = 'translate(0, 0)';
-      });
+      el.style.setProperty("--dx", `${dx}px`);
+      el.style.setProperty("--dy", `${dy}px`);
+      el.classList.remove("moving");
+      void el.offsetWidth; // restart animation
+      el.classList.add("moving");
     }
   }, [lastMove, row, col, square]);
 
@@ -69,12 +69,12 @@ const Piece: React.FC<PieceProps> = ({ row, col }) => {
         pieceRef.current = node;
         dragRef(node);
       }}
+      className="piece"
       style={{
-        fontSize: 'calc(var(--square) * 0.8)',
-        cursor: 'grab',
+        fontSize: "calc(var(--square) * 0.8)",
+        cursor: "grab",
         opacity: isDragging ? 0.5 : 1,
-        userSelect: 'none',
-        transition: 'transform 0.3s ease',
+        userSelect: "none",
       }}
     >
       {symbol}
