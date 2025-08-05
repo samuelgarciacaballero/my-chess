@@ -58,40 +58,53 @@ export const useChessStore = create<ChessState>((set, get) => {
       const targetPiece = game.get(to as Square);
       const skipFor = get().skipCaptureFor;
       if (skipFor === currentTurn && targetPiece) {
-        set({ notification: "No puedes capturar esta pieza este turno." });
+        set({
+          notification: "No puedes comer este turno por el tratado de paz",
+        });
         return false;
       }
 
       // 1) Bloqueos de casilla normal/rare
       const { blockedSquare, blockedType } = get();
-      if (to === blockedSquare) return false;
-      if (
-        blockedType === "rare" &&
-        piece.type !== "n" &&
-        blockedSquare
-      ) {
-        const c1 = fileToCol(from[0]), r1 = rankToRow(+from[1]);
-        const c2 = fileToCol(to[0]),   r2 = rankToRow(+to[1]);
-        const dc = c2 - c1, dr = r2 - r1;
+      if (to === blockedSquare) {
+        set({ notification: "En esta casilla hay un boquete" });
+        return false;
+      }
+      if (blockedType === "rare" && piece.type !== "n" && blockedSquare) {
+        const c1 = fileToCol(from[0]),
+          r1 = rankToRow(+from[1]);
+        const c2 = fileToCol(to[0]),
+          r2 = rankToRow(+to[1]);
+        const dc = c2 - c1,
+          dr = r2 - r1;
         const stepC = dc === 0 ? 0 : dc / Math.abs(dc);
         const stepR = dr === 0 ? 0 : dr / Math.abs(dr);
-        let c = c1 + stepC, r = r1 + stepR;
+        let c = c1 + stepC,
+          r = r1 + stepR;
         while (c !== c2 || r !== r2) {
           const sq = "abcdefgh"[c] + (8 - r).toString();
-          if (sq === blockedSquare) return false;
-          c += stepC; r += stepR;
+          if (sq === blockedSquare) {
+            set({
+              notification: "En esta casilla hay un boquete infranqueable",
+            });
+            return false;
+          }
+          c += stepC;
+          r += stepR;
         }
       }
 
       // 2) Tratado de paz: lanzamiento del efecto
       if (effectKey === "noCaptureNextTurn") {
         const legal = game.moves({ verbose: true }) as Move[];
-        if (!legal.some(m => m.from === from && m.to === to)) return false;
+        if (!legal.some((m) => m.from === from && m.to === to)) return false;
         const m = game.move({ from, to });
         if (!m) return false;
         const movedColor = m.color;
         // descartar carta
-        const sel = cardStore.hand.find(c => c.effectKey === "noCaptureNextTurn");
+        const sel = cardStore.hand.find(
+          (c) => c.effectKey === "noCaptureNextTurn"
+        );
         if (sel) {
           cardStore.discardCard(sel.id);
           cardStore.selectCard("");
@@ -109,59 +122,94 @@ export const useChessStore = create<ChessState>((set, get) => {
 
       // 3) Movimientos legales y otros efectos
       const legalMoves = game.moves({ verbose: true }) as Move[];
-      let allowed = legalMoves.some(m => m.from === from && m.to === to);
+      let allowed = legalMoves.some((m) => m.from === from && m.to === to);
       let manual = false;
       let effectUsed = false;
       let movedColor: Color = currentTurn;
       let resultCaptured: string | undefined;
 
       if (!allowed && effectKey) {
-        const c1 = fileToCol(from[0]), r1 = rankToRow(+from[1]);
-        const c2 = fileToCol(to[0]),   r2 = rankToRow(+to[1]);
-        const dr = r2 - r1, dc = c2 - c1;
+        const c1 = fileToCol(from[0]),
+          r1 = rankToRow(+from[1]);
+        const c2 = fileToCol(to[0]),
+          r2 = rankToRow(+to[1]);
+        const dr = r2 - r1,
+          dc = c2 - c1;
         switch (effectKey) {
           case "pawnBackward1":
-            if (piece.type === "p" && dc === 0 && dr === (piece.color === "w" ? 1 : -1)) {
+            if (
+              piece.type === "p" &&
+              dc === 0 &&
+              dr === (piece.color === "w" ? 1 : -1)
+            ) {
               allowed = effectUsed = manual = true;
             }
             break;
           case "pawnBackwardCapture":
-            if (piece.type === "p" && Math.abs(dc) === 1 && dr === (piece.color === "w" ? 1 : -1) && targetPiece) {
+            if (
+              piece.type === "p" &&
+              Math.abs(dc) === 1 &&
+              dr === (piece.color === "w" ? 1 : -1) &&
+              targetPiece
+            ) {
               allowed = effectUsed = manual = true;
             }
             break;
           case "pawnSideStep":
-            if (piece.type === "p" && dr === 0 && Math.abs(dc) === 1 && !targetPiece) {
+            if (
+              piece.type === "p" &&
+              dr === 0 &&
+              Math.abs(dc) === 1 &&
+              !targetPiece
+            ) {
               allowed = effectUsed = manual = true;
             }
             break;
           case "blockSquare":
             if (!targetPiece) {
               allowed = effectUsed = manual = true;
-              set({ blockedSquare: to, blockedBy: currentTurn, blockedType: "normal" });
+              set({
+                blockedSquare: to,
+                blockedBy: currentTurn,
+                blockedType: "normal",
+              });
             }
             break;
           case "blockSquareRare":
             if (!targetPiece) {
               allowed = effectUsed = manual = true;
-              set({ blockedSquare: to, blockedBy: currentTurn, blockedType: "rare" });
+              set({
+                blockedSquare: to,
+                blockedBy: currentTurn,
+                blockedType: "rare",
+              });
             }
             break;
           case "queenKnightMove":
             if (piece.type === "q") {
-              const da = Math.abs(dr), db = Math.abs(dc);
+              const da = Math.abs(dr),
+                db = Math.abs(dc);
               if ((da === 2 && db === 1) || (da === 1 && db === 2)) {
                 allowed = effectUsed = manual = true;
               }
             }
             break;
           case "bishopReverseAndFlip":
-            if (piece.type === "b" && dc === 0 && dr === (piece.color === "w" ? 1 : -1) && !targetPiece) {
+            if (
+              piece.type === "b" &&
+              dc === 0 &&
+              dr === (piece.color === "w" ? 1 : -1) &&
+              !targetPiece
+            ) {
               allowed = effectUsed = manual = true;
             }
             break;
           case "bishopToKnight":
-            if (piece.type === "b" && targetPiece?.type === "n" && targetPiece.color === currentTurn) {
+            if (
+              piece.type === "b" &&
+              targetPiece?.type === "n" &&
+              targetPiece.color === currentTurn
+            ) {
               allowed = effectUsed = manual = true;
             }
             break;
@@ -204,7 +252,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         return true;
       }
 
-      // 6) Cambio de turno y limpieza de skipCapture
+      // 6) Cambio de turno, limpieza de skipCapture y de boquete tras el turno rival
       const prevSkip = get().skipCaptureFor;
       const nextTurn = movedColor === "w" ? "b" : "w";
       const update: Partial<ChessState> = {
@@ -212,18 +260,33 @@ export const useChessStore = create<ChessState>((set, get) => {
         turn: nextTurn,
         lastMove: { from, to },
       };
+      // Si había un boquete y quien acaba de mover NO es quien lo puso, lo limpiamos
+      if (
+        get().blockedSquare &&
+        get().blockedBy &&
+        get().blockedBy !== movedColor
+      ) {
+        update.blockedSquare = null;
+        update.blockedBy = null;
+        update.blockedType = null;
+      }
       if (prevSkip === currentTurn) {
         update.skipCaptureFor = null;
       }
       set(update);
 
       // 7) Robar carta si no fue bloqueo
-      if (!(effectUsed && (effectKey === "blockSquare" || effectKey === "blockSquareRare"))) {
+      if (
+        !(
+          effectUsed &&
+          (effectKey === "blockSquare" || effectKey === "blockSquareRare")
+        )
+      ) {
         if (movedColor === "w") cardStore.drawCard();
         else cardStore.drawOpponentCard();
       }
 
-      // 8) Descartar carta usada (si no fue bloqueo ni tratado de paz)
+      // 8) Descartar carta usada
       if (
         effectUsed &&
         effectKey &&
@@ -231,7 +294,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         effectKey !== "blockSquareRare" &&
         effectKey !== "noCaptureNextTurn"
       ) {
-        const used = cardStore.hand.find(c => c.effectKey === effectKey);
+        const used = cardStore.hand.find((c) => c.effectKey === effectKey);
         if (used) {
           cardStore.discardCard(used.id);
           cardStore.selectCard("");
