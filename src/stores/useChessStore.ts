@@ -1,7 +1,13 @@
+// src/stores/useChessStore.ts
 import { create } from "zustand";
 import { Chess } from "chess.js";
 import type { Piece, Color, Square, Move } from "chess.js";
 import { useCardStore } from "./useCardStore";
+
+export interface LastMove {
+  from: Square | null;
+  to: Square | null;
+}
 
 export type SquarePiece = Piece | null;
 
@@ -9,6 +15,7 @@ interface ChessState {
   game: Chess;
   board: SquarePiece[][];
   turn: Color;
+  lastMove: LastMove;
   blockedSquare: Square | null;
   blockedBy: Color | null;
   move: (from: Square, to: Square, effectKey?: string) => boolean;
@@ -19,7 +26,6 @@ interface ChessState {
 export const useChessStore = create<ChessState>((set, get) => {
   const game = new Chess();
 
-  // Convierte file/rank a índices numéricos
   const fileToCol = (f: string) => "abcdefgh".indexOf(f);
   const rankToRow = (r: number) => 8 - r;
 
@@ -27,6 +33,7 @@ export const useChessStore = create<ChessState>((set, get) => {
     game,
     board: game.board() as SquarePiece[][],
     turn: game.turn(),
+    lastMove: { from: null, to: null },
     blockedSquare: null,
     blockedBy: null,
 
@@ -52,40 +59,70 @@ export const useChessStore = create<ChessState>((set, get) => {
       // 3) Reglas especiales si hay carta
       if (!allowed && effectKey) {
         const col1 = fileToCol(from[0]);
-        const row1 = rankToRow(parseInt(from[1], 10));
+        const row1 = rankToRow(+from[1]);
         const col2 = fileToCol(to[0]);
-        const row2 = rankToRow(parseInt(to[1], 10));
+        const row2 = rankToRow(+to[1]);
         const dr = row2 - row1;
         const dc = col2 - col1;
 
         switch (effectKey) {
           case "pawnBackward1":
-            if (piece.type === "p" && dc === 0 && dr === (piece.color === "w" ? 1 : -1)) {
+            if (
+              piece.type === "p" &&
+              dc === 0 &&
+              dr === (piece.color === "w" ? 1 : -1)
+            ) {
               allowed = true;
               effectUsed = true;
               manual = true;
             }
             break;
+
           case "pawnBackwardCapture":
-            if (piece.type === "p" && Math.abs(dc) === 1 && dr === (piece.color === "w" ? 1 : -1) && targetPiece) {
+            if (
+              piece.type === "p" &&
+              Math.abs(dc) === 1 &&
+              dr === (piece.color === "w" ? 1 : -1) &&
+              targetPiece
+            ) {
               allowed = true;
               effectUsed = true;
               manual = true;
             }
             break;
+
           case "pawnSideStep":
-            if (piece.type === "p" && dr === 0 && Math.abs(dc) === 1 && !targetPiece) {
+            if (
+              piece.type === "p" &&
+              dr === 0 &&
+              Math.abs(dc) === 1 &&
+              !targetPiece
+            ) {
               allowed = true;
               effectUsed = true;
               manual = true;
             }
             break;
+
           case "blockSquare":
             if (!targetPiece) {
               allowed = true;
               effectUsed = true;
               manual = true;
               set({ blockedSquare: to, blockedBy: currentTurn });
+            }
+            break;
+
+          case "bishopReverseAndFlip":
+            if (
+              piece.type === "b" &&
+              Math.abs(dr) === Math.abs(dc) &&
+              ((piece.color === "w" && dr < 0) ||
+                (piece.color === "b" && dr > 0))
+            ) {
+              allowed = true;
+              effectUsed = true;
+              manual = true;
             }
             break;
         }
@@ -96,7 +133,7 @@ export const useChessStore = create<ChessState>((set, get) => {
       let resultCaptured: string | undefined;
 
       // 4) Ejecutar movimiento o manual
-      if (manual && effectUsed) {
+      if (manual && effectUsed && piece) {
         if (effectKey === "pawnBackwardCapture" && targetPiece) {
           game.remove(to as Square);
         }
@@ -104,6 +141,12 @@ export const useChessStore = create<ChessState>((set, get) => {
         game.put({ type: piece.type, color: piece.color }, to as Square);
         movedColor = piece.color;
         resultCaptured = targetPiece?.type;
+
+        // — AÑADIDO: alternar turno interno cuando se usa pawnSideStep (o cualquier manual)
+        // Actualizamos el turno en el FEN para que game.turn() refleje el cambio
+        const fenParts = game.fen().split(" ");
+        fenParts[1] = movedColor === "w" ? "b" : "w";
+        game.load(fenParts.join(" "));
       } else {
         const m = game.move({ from, to });
         if (!m) return false;
@@ -113,18 +156,26 @@ export const useChessStore = create<ChessState>((set, get) => {
 
       // 5) Primera captura
       if (resultCaptured && !cardStore.hasFirstCapture) {
-        cardStore.markFirstCapture();
-        const nextTr = movedColor === "w" ? "b" : "w";
-        set({ board: game.board() as SquarePiece[][], turn: nextTr });
+        cardStore.markFirstCapture(movedColor);
+        const nextTurn: Color = movedColor === "w" ? "b" : "w";
+        set({
+          board: game.board() as SquarePiece[][],
+          turn: nextTurn,
+          lastMove: { from, to },
+        });
         return true;
       }
 
-      // 6) Turno normal, limpia bloqueo si toca tu turno
-      const nextTr = movedColor === "w" ? "b" : "w";
-      if (nextTr === get().blockedBy) {
+      // 6) Turno normal, limpia bloqueo si toca al bloqueado
+      const nextTurn: Color = movedColor === "w" ? "b" : "w";
+      if (nextTurn === get().blockedBy) {
         set({ blockedSquare: null, blockedBy: null });
       }
-      set({ board: game.board() as SquarePiece[][], turn: nextTr });
+      set({
+        board: game.board() as SquarePiece[][],
+        turn: nextTurn,
+        lastMove: { from, to },
+      });
 
       // 7) Robar carta
       if (!effectUsed) {
@@ -149,27 +200,22 @@ export const useChessStore = create<ChessState>((set, get) => {
 
     blockSquareAt: (sq: Square) => {
       const state = get();
-      // solo si no existe bloqueo y la casilla está vacia
       if (state.blockedSquare || state.game.get(sq)) return;
-      console.log('🔒 blockSquareAt:', sq, 'by', state.turn);
-      const nextTr: Color = state.turn === 'w' ? 'b' : 'w';
-      // actualiza turno interno recargando FEN con nuevo turno
-      const fenParts = state.game.fen().split(' ');
-      fenParts[1] = nextTr;
-      state.game.load(fenParts.join(' '));
-      // actualiza estado (board para re-render)
+      const nextTurn: Color = state.turn === "w" ? "b" : "w";
+      const fenParts = state.game.fen().split(" ");
+      fenParts[1] = nextTurn;
+      state.game.load(fenParts.join(" "));
       set({
         blockedSquare: sq,
         blockedBy: state.turn,
-        turn: nextTr,
+        turn: nextTurn,
         board: state.game.board() as SquarePiece[][],
       });
-      // descartar carta y limpiar selección
       const cardStore = useCardStore.getState();
-      const used = cardStore.hand.find((c) => c.effectKey === 'blockSquare');
+      const used = cardStore.hand.find((c) => c.effectKey === "blockSquare");
       if (used) {
         cardStore.discardCard(used.id);
-        cardStore.selectCard('');
+        cardStore.selectCard("");
       }
     },
 
@@ -180,7 +226,8 @@ export const useChessStore = create<ChessState>((set, get) => {
         board: newGame.board() as SquarePiece[][],
         turn: newGame.turn(),
         blockedSquare: null,
-        blockedBy: null
+        blockedBy: null,
+        lastMove: { from: null, to: null },
       });
     },
   };
