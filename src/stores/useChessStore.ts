@@ -77,7 +77,8 @@ export const useChessStore = create<ChessState>((set, get) => {
 
       const target = game.get(to as Square);
       let effectUsed = false, manual = false;
-      let movedColor: Color;
+      // Inicializamos movedColor para evitar el error TS de "used before assigned"
+      let movedColor: Color = currentTurn;
 
       // 3) Reglas especiales por carta
       if (!allowed && effectKey) {
