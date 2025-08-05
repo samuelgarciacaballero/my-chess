@@ -95,13 +95,13 @@ const initialDeck: Card[] = [
     rarity: "mythic",
     effectKey: "undoTurn",
   },
-  {
-    id: "cupido",
-    name: "Cupido",
-    description: "Alfil convierte un peón rival en tuyo por un turno",
-    rarity: "epic",
-    effectKey: "bishopCupid",
-  },
+  // {
+  //   id: "cupido",
+  //   name: "Cupido",
+  //   description: "Alfil convierte un peón rival en tuyo por un turno",
+  //   rarity: "epic",
+  //   effectKey: "bishopCupid",
+  // },
 ];
 
 interface CardState {

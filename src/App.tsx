@@ -7,6 +7,8 @@ import TurnIndicator from "./components/TurnIndicator";
 import FaceUpCard from "./components/FaceUpCard";
 import Notification from "./components/Notification";
 import { useCardStore } from "./stores/useCardStore";
+import PromotionModal from "./components/PromotionModal";
+
 // import type { Card } from "./stores/useCardStore";
 
 const App: React.FC = () => {
@@ -38,7 +40,7 @@ const App: React.FC = () => {
         <Board />
         {initialFaceUp && <FaceUpCard card={initialFaceUp} />}
       </div>
-
+      <PromotionModal />
       <Hand />
     </div>
   );
