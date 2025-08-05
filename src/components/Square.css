@@ -5,6 +5,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* transición suave del highlight */
+  transition: box-shadow 0.05s ease-in-out, background-color 0.05s ease-in-out;
 }
 
 .square.light {
