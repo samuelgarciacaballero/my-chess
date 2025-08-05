@@ -1,0 +1,27 @@
+.card {
+  position: relative;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin: 0.5rem;
+  width: 150px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+}
+.card.selected {
+  border: 3px solid #333;
+}
+.card .discard-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+}

@@ -3,6 +3,7 @@ import React from 'react';
 import type { Card } from '../stores/useCardStore';
 import { useCardStore } from '../stores/useCardStore';
 import { rarityColors } from '../styles/cardColors';
+import './Card.css';
 
 interface CardProps {
   card: Card;
@@ -22,36 +23,15 @@ const CardView: React.FC<CardProps> = ({ card, isSelected, onSelect }) => {
 
   // Background color según rareza
   const bgColor = rarityColors[card.rarity];
-  const borderStyle = isSelected ? '3px solid #333' : '1px solid #555';
+  const cls = `card${isSelected ? ' selected' : ''}`;
 
   return (
     <div
       onClick={() => onSelect(card.id)}
-      style={{
-        position: 'relative',
-        backgroundColor: bgColor,
-        border: borderStyle,
-        borderRadius: '8px',
-        padding: '0.75rem',
-        margin: '0.5rem',
-        width: '150px',
-        cursor: 'pointer',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-      }}
+      className={cls}
+      style={{ backgroundColor: bgColor }}
     >
-      <button
-        onClick={handleDiscard}
-        style={{
-          position: 'absolute',
-          top: '4px',
-          right: '4px',
-          border: 'none',
-          background: 'transparent',
-          fontSize: '1.1rem',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-        }}
-      >
+      <button onClick={handleDiscard} className="discard-btn">
         ×
       </button>
 

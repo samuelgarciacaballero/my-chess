@@ -1,8 +1,10 @@
 // src/components/Piece.tsx
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDrag } from 'react-dnd';
+import { getEmptyImage } from 'react-dnd-html5-backend';
 import { useChessStore } from '../stores/useChessStore';
 import type { SquarePiece } from '../stores/useChessStore';
+import { fromSquare } from '../utils/coords';
 
 const unicodeMap: Record<string, Record<'w' | 'b', string>> = {
   p: { w: '♙', b: '♟' },
@@ -19,37 +21,65 @@ interface PieceProps {
 }
 
 const Piece: React.FC<PieceProps> = ({ row, col }) => {
-  const board = useChessStore(state => state.board);
+  const board = useChessStore((state) => state.board);
+  const lastMove = useChessStore((s) => s.lastMove);
 
-  // 1) Hook al inicio, sin condiciones
-  const [{ isDragging }, dragRef] = useDrag({
+  const [{ isDragging }, dragRef, preview] = useDrag({
     type: 'piece',
     item: { row, col },
-    collect: monitor => ({ isDragging: monitor.isDragging() }),
+    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
     canDrag: () => !!board[row][col],
   });
 
+  useEffect(() => {
+    preview(getEmptyImage(), { captureDraggingState: true });
+  }, [preview]);
+
+  const pieceRef = useRef<HTMLDivElement | null>(null);
+
   const square: SquarePiece = board[row][col];
+
+  useEffect(() => {
+    if (!lastMove.from || !lastMove.to || !pieceRef.current) return;
+    if (!square) return;
+    const to = fromSquare(lastMove.to);
+    const from = fromSquare(lastMove.from);
+    if (to.row === row && to.col === col) {
+      const size = pieceRef.current.parentElement?.clientWidth ?? 60;
+      const dx = (from.col - to.col) * size;
+      const dy = (from.row - to.row) * size;
+      const el = pieceRef.current;
+      el.style.transition = 'none';
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+      requestAnimationFrame(() => {
+        el.style.transition = 'transform 0.3s ease';
+        el.style.transform = 'translate(0, 0)';
+      });
+    }
+  }, [lastMove, row, col, square]);
+
   if (!square) return null;
 
   const { type, color } = square;
   const symbol = unicodeMap[type][color];
 
-  const element = (
+  return (
     <div
+      ref={(node) => {
+        pieceRef.current = node;
+        dragRef(node);
+      }}
       style={{
-        fontSize: '2rem',
+        fontSize: 'calc(var(--square) * 0.8)',
         cursor: 'grab',
         opacity: isDragging ? 0.5 : 1,
         userSelect: 'none',
+        transition: 'transform 0.3s ease',
       }}
     >
       {symbol}
     </div>
   );
-
-  // 2) Envolvemos el elemento con dragRef(...) en vez de usar ref={dragRef}
-  return dragRef(element);
 };
 
 export default Piece;
