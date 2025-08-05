@@ -44,6 +44,11 @@ const CustomDragLayer: React.FC = () => {
     position: 'fixed',
     pointerEvents: 'none',
     zIndex: 100,
+    width: 'var(--square)',
+    height: 'var(--square)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     fontSize: 'calc(var(--square) * 0.8)',
     ...getItemStyles(currentOffset),
   };
