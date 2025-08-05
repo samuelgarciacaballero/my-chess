@@ -61,7 +61,32 @@ export const useChessStore = create<ChessState>((set, get) => {
         return false;
       }
 
-      // 1) Bloqueos de casilla
+      // 1) Efecto undoTurn (DEJAVÚ): retrocede dos medias jugadas
+      if (effectKey === "undoTurn") {
+        const sel = cardStore.hand.find((c) => c.effectKey === "undoTurn");
+        if (!sel) return false;
+        if (window.confirm("¿Deseas usar DEJAVÚ para deshacer tu último turno?")) {
+          game.undo(); // deshacer turno del oponente
+          game.undo(); // deshacer turno del jugador
+          // descartar carta
+          cardStore.discardCard(sel.id);
+          cardStore.selectCard("");
+          // limpiar efectos temporales
+          set({
+            board: game.board() as SquarePiece[][],
+            turn: game.turn(),
+            lastMove: { from: null, to: null },
+            blockedSquare: null,
+            blockedBy: null,
+            blockedType: null,
+            skipCaptureFor: null,
+          });
+          return true;
+        }
+        return false;
+      }
+
+      // 2) Bloqueos de casilla
       const { blockedSquare, blockedType } = get();
       if (to === blockedSquare) {
         set({ notification: "En esta casilla hay un boquete" });
@@ -85,7 +110,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         }
       }
 
-      // 2) Efecto kingFreeCastle: restaurar derechos y permitir enroque manual
+      // 3) Efecto kingFreeCastle: restaurar derechos y permitir enroque manual
       if (effectKey === "kingFreeCastle" && piece.type === "k") {
         const home: Square = piece.color === "w" ? "e1" : "e8";
         if (to === home) {
@@ -103,7 +128,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         return false;
       }
 
-      // 3) Efecto noCaptureNextTurn
+      // 4) Efecto noCaptureNextTurn
       if (effectKey === "noCaptureNextTurn") {
         const legal = game.moves({ verbose: true }) as Move[];
         if (!legal.some((m) => m.from === from && m.to === to)) return false;
@@ -117,7 +142,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         return true;
       }
 
-      // 4) Movimientos legales y otros efectos manuales
+      // 5) Movimientos legales y otros efectos manuales
       const legalMoves = game.moves({ verbose: true }) as Move[];
       let allowed = legalMoves.some((m) => m.from === from && m.to === to);
       let manual = false;
@@ -197,7 +222,7 @@ export const useChessStore = create<ChessState>((set, get) => {
       }
       if (!allowed) return false;
 
-      // 5) Ejecutar movimiento o efecto manual
+      // 6) Ejecutar movimiento o efecto manual
       if (manual && effectUsed) {
         if (isB2K) {
           game.remove(to as Square);
@@ -225,7 +250,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         movedColor = m.color; resultCaptured = m.captured;
       }
 
-      // 6) Primera captura
+      // 7) Primera captura
       if (resultCaptured && !cardStore.hasFirstCapture) {
         cardStore.markFirstCapture(movedColor);
         const next = movedColor === "w" ? "b" : "w";
@@ -233,7 +258,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         return true;
       }
 
-      // 7) Cambio de turno y limpieza de boquetes
+      // 8) Cambio de turno y limpieza de boquetes
       const prevSkip = get().skipCaptureFor;
       const nextTurn: Color = movedColor === "w" ? "b" : "w";
       const update: Partial<ChessState> = { board: game.board() as SquarePiece[][], turn: nextTurn, lastMove: { from, to } };
@@ -243,12 +268,12 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (prevSkip === currentTurn) update.skipCaptureFor = null;
       set(update);
 
-      // 8) Robar carta (no roba si se usó efecto)
+      // 9) Robar carta (no roba si se usó efecto)
       if (!effectUsed) {
         if (movedColor === "w") cardStore.drawCard(); else cardStore.drawOpponentCard();
       }
 
-      // 9) Descartar carta usada
+      // 10) Descartar carta usada
       if (effectUsed && effectKey && effectKey !== "noCaptureNextTurn") {
         const used = cardStore.hand.find((c) => c.effectKey === effectKey);
         if (used) { cardStore.discardCard(used.id); cardStore.selectCard(""); }
