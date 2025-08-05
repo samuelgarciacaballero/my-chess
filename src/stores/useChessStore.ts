@@ -125,6 +125,22 @@ export const useChessStore = create<ChessState>((set, get) => {
               manual = true;
             }
             break;
+
+          case "queenKnightMove":
+            // Galope Real: permite a la reina moverse como un caballo
+            if (piece.type === "q") {
+              const drAbs = Math.abs(dr);
+              const dcAbs = Math.abs(dc);
+              if (
+                (drAbs === 2 && dcAbs === 1) ||
+                (drAbs === 1 && dcAbs === 2)
+              ) {
+                allowed = true;
+                effectUsed = true;
+                manual = true;
+              }
+            }
+            break;
         }
       }
 
