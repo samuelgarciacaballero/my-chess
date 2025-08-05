@@ -89,27 +89,15 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (effectKey === "kingFreeCastle" && piece.type === "k") {
         const home: Square = piece.color === "w" ? "e1" : "e8";
         if (to === home) {
-          // Restaurar posición del rey y derechos de enroque
           game.remove(from as Square);
           game.put({ type: "k", color: piece.color }, home);
           const fenParts = game.fen().split(" ");
           fenParts[2] = piece.color === "w" ? "KQ" : "kq";
           fenParts[1] = currentTurn;
           game.load(fenParts.join(" "));
-
-          // Descartar carta kingFreeCastle
           const sel = cardStore.hand.find((c) => c.effectKey === "kingFreeCastle");
-          if (sel) {
-            cardStore.discardCard(sel.id);
-            cardStore.selectCard("");
-          }
-
-          // Actualizar estado sin cambiar turno, para que el jugador pueda enrocar manualmente
-          set({
-            board: game.board() as SquarePiece[][],
-            turn: currentTurn,
-            lastMove: { from, to: home },
-          });
+          if (sel) { cardStore.discardCard(sel.id); cardStore.selectCard(""); }
+          set({ board: game.board() as SquarePiece[][], turn: currentTurn, lastMove: { from, to: home } });
           return true;
         }
         return false;
@@ -136,6 +124,7 @@ export const useChessStore = create<ChessState>((set, get) => {
       let effectUsed = false;
       let movedColor: Color = currentTurn;
       let resultCaptured: string | undefined;
+      let isB2K = false;
 
       if (!allowed && effectKey) {
         const c1 = fileToCol(from[0]), r1 = rankToRow(+from[1]);
@@ -183,7 +172,7 @@ export const useChessStore = create<ChessState>((set, get) => {
             break;
           case "bishopToKnight":
             if (piece.type === "b" && targetPiece?.type === "n" && targetPiece.color === currentTurn) {
-              allowed = manual = effectUsed = true;
+              allowed = manual = effectUsed = isB2K = true;
             }
             break;
           default:
@@ -194,14 +183,28 @@ export const useChessStore = create<ChessState>((set, get) => {
 
       // 5) Ejecutar movimiento o efecto manual
       if (manual && effectUsed) {
-        if (effectKey === "pawnBackwardCapture" && targetPiece) game.remove(to as Square);
-        game.remove(from as Square);
-        game.put({ type: piece.type, color: piece.color }, to as Square);
-        movedColor = piece.color;
-        resultCaptured = targetPiece?.type;
-        const fen = game.fen().split(" ");
-        fen[1] = movedColor === "w" ? "b" : "w";
-        game.load(fen.join(" "));
+        if (isB2K) {
+          // Intercambiar alfil y caballo
+          game.remove(to as Square); // el caballo original
+          const knight: Piece = { type: 'n', color: currentTurn };
+          game.remove(from as Square); // quita alfil
+          game.put({ type: 'b', color: currentTurn }, to as Square);
+          game.put(knight, from as Square);
+          movedColor = currentTurn;
+          resultCaptured = undefined;
+          const fen = game.fen().split(' ');
+          fen[1] = movedColor === 'w' ? 'b' : 'w';
+          game.load(fen.join(' '));
+        } else {
+          if (effectKey === "pawnBackwardCapture" && targetPiece) game.remove(to as Square);
+          game.remove(from as Square);
+          game.put({ type: piece.type, color: piece.color }, to as Square);
+          movedColor = piece.color;
+          resultCaptured = targetPiece?.type;
+          const fen = game.fen().split(" ");
+          fen[1] = movedColor === "w" ? "b" : "w";
+          game.load(fen.join(" "));
+        }
       } else {
         const m = game.move({ from, to });
         if (!m) return false;
