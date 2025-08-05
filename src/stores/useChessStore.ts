@@ -175,6 +175,22 @@ export const useChessStore = create<ChessState>((set, get) => {
               allowed = manual = effectUsed = isB2K = true;
             }
             break;
+          case "kingDoubleStep":
+            if (piece.type === "k" && !targetPiece) {
+              const stepC = dc === 0 ? 0 : dc / Math.abs(dc);
+              const stepR = dr === 0 ? 0 : dr / Math.abs(dr);
+              if (Math.max(Math.abs(dc), Math.abs(dr)) === 2) {
+                let c = c1 + stepC, r = r1 + stepR;
+                let clear = true;
+                while (c !== c2 || r !== r2) {
+                  const sq = "abcdefgh"[c] + (8 - r);
+                  if (game.get(sq as Square)) { clear = false; break; }
+                  c += stepC; r += stepR;
+                }
+                if (clear) allowed = manual = effectUsed = true;
+              }
+            }
+            break;
           default:
             break;
         }
@@ -184,10 +200,9 @@ export const useChessStore = create<ChessState>((set, get) => {
       // 5) Ejecutar movimiento o efecto manual
       if (manual && effectUsed) {
         if (isB2K) {
-          // Intercambiar alfil y caballo
-          game.remove(to as Square); // el caballo original
+          game.remove(to as Square);
           const knight: Piece = { type: 'n', color: currentTurn };
-          game.remove(from as Square); // quita alfil
+          game.remove(from as Square);
           game.put({ type: 'b', color: currentTurn }, to as Square);
           game.put(knight, from as Square);
           movedColor = currentTurn;
@@ -206,10 +221,8 @@ export const useChessStore = create<ChessState>((set, get) => {
           game.load(fen.join(" "));
         }
       } else {
-        const m = game.move({ from, to });
-        if (!m) return false;
-        movedColor = m.color;
-        resultCaptured = m.captured;
+        const m = game.move({ from, to }); if (!m) return false;
+        movedColor = m.color; resultCaptured = m.captured;
       }
 
       // 6) Primera captura
@@ -223,27 +236,20 @@ export const useChessStore = create<ChessState>((set, get) => {
       // 7) Cambio de turno y limpieza de boquetes
       const prevSkip = get().skipCaptureFor;
       const nextTurn: Color = movedColor === "w" ? "b" : "w";
-      const update: Partial<ChessState> = {
-        board: game.board() as SquarePiece[][],
-        turn: nextTurn,
-        lastMove: { from, to },
-      };
+      const update: Partial<ChessState> = { board: game.board() as SquarePiece[][], turn: nextTurn, lastMove: { from, to } };
       if (get().blockedSquare && get().blockedBy && get().blockedBy !== movedColor) {
-        update.blockedSquare = null;
-        update.blockedBy = null;
-        update.blockedType = null;
+        update.blockedSquare = null; update.blockedBy = null; update.blockedType = null;
       }
       if (prevSkip === currentTurn) update.skipCaptureFor = null;
       set(update);
 
-      // 8) Robar carta si no fue bloqueo
-      if (!(effectUsed && (effectKey === "blockSquare" || effectKey === "blockSquareRare"))) {
-        if (movedColor === "w") cardStore.drawCard();
-        else cardStore.drawOpponentCard();
+      // 8) Robar carta (no roba si se usó efecto)
+      if (!effectUsed) {
+        if (movedColor === "w") cardStore.drawCard(); else cardStore.drawOpponentCard();
       }
 
       // 9) Descartar carta usada
-      if (effectUsed && effectKey && effectKey !== "blockSquare" && effectKey !== "blockSquareRare" && effectKey !== "noCaptureNextTurn") {
+      if (effectUsed && effectKey && effectKey !== "noCaptureNextTurn") {
         const used = cardStore.hand.find((c) => c.effectKey === effectKey);
         if (used) { cardStore.discardCard(used.id); cardStore.selectCard(""); }
       }
@@ -252,8 +258,7 @@ export const useChessStore = create<ChessState>((set, get) => {
     },
 
     blockSquareAt: (sq: Square) => {
-      const st = get();
-      if (st.blockedSquare || st.game.get(sq)) return;
+      const st = get(); if (st.blockedSquare || st.game.get(sq)) return;
       const cs = useCardStore.getState(); const sel = cs.selectedCard; if (!sel) return;
       const isRare = sel.effectKey === "blockSquareRare";
       const next = st.turn === "w" ? "b" : "w";
