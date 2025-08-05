@@ -3,15 +3,30 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* light theme (default) */
+  --bg-color: #ffffff;
+  --text-color: #213547;
+  --button-bg: #f9f9f9;
+  --button-hover-glow: rgba(116, 123, 255, 0.7);
+  --card-hover-glow: rgba(116, 123, 255, 0.7);
+}
+
+.dark {
+  --bg-color: #242424;
+  --text-color: rgba(255, 255, 255, 0.87);
+  --button-bg: #1a1a1a;
+  --button-hover-glow: rgba(100, 108, 255, 0.7);
+  --card-hover-glow: rgba(100, 108, 255, 0.7);
+  color-scheme: dark;
+}
+
+.light {
+  color-scheme: light;
 }
 
 a {
@@ -29,6 +44,8 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 h1 {
@@ -43,27 +60,19 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--button-bg);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition:
+    border-color 0.25s,
+    box-shadow 0.3s ease;
 }
+
 button:hover {
   border-color: #646cff;
+  box-shadow: 0 0 8px var(--button-hover-glow);
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
 }

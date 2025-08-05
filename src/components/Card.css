@@ -7,13 +7,17 @@
   width: 150px;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.3s ease;
 }
 .card:hover {
   transform: translateY(-4px);
+  box-shadow: 0 0 10px var(--card-hover-glow);
 }
 .card.selected {
-  border: 3px solid #333;
+  border: 3px solid #ffd700;
+  box-shadow: 0 0 10px 2px #ffd700;
 }
 .card .discard-btn {
   position: absolute;
@@ -24,4 +28,11 @@
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
+  transition:
+    color 0.3s ease,
+    text-shadow 0.3s ease;
+}
+.card .discard-btn:hover {
+  color: #ff4d4f;
+  text-shadow: 0 0 6px #ff4d4f;
 }

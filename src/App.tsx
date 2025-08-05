@@ -14,25 +14,56 @@ import "./App.css";
 // import type { Card } from "./stores/useCardStore";
 
 const App: React.FC = () => {
-  const initialFaceUp = useCardStore(s => s.initialFaceUp);
-  const setInitialFaceUp = useCardStore(s => s.setInitialFaceUp);
+  const initialFaceUp = useCardStore((s) => s.initialFaceUp);
+  const setInitialFaceUp = useCardStore((s) => s.setInitialFaceUp);
   const [devMode, setDevMode] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">(() =>
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light",
+  );
 
   useEffect(() => {
     setInitialFaceUp();
   }, [setInitialFaceUp]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
+  }, [theme]);
+
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto", padding: "1rem", position: "relative" }}>
+    <div
+      style={{
+        maxWidth: 960,
+        margin: "0 auto",
+        padding: "1rem",
+        position: "relative",
+      }}
+    >
       {/* Notificaciones flotantes y capa de arrastre personalizada */}
       <Notification />
       <CustomDragLayer />
 
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <h1>My Chess MVP</h1>
-        <button onClick={() => setDevMode(d => !d)}>
-          {devMode ? "🔒 Salir Dev Mode" : "🔧 Entrar Dev Mode"}
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+          >
+            {theme === "dark" ? "☀️ Claro" : "🌙 Oscuro"}
+          </button>
+          <button onClick={() => setDevMode((d) => !d)}>
+            {devMode ? "🔒 Salir Dev Mode" : "🔧 Entrar Dev Mode"}
+          </button>
+        </div>
       </header>
 
       {devMode && <DevPanel />}

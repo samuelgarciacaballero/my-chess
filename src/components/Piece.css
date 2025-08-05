@@ -1,0 +1,17 @@
+/* src/components/Piece.css */
+.piece {
+  transition: transform 0.3s ease;
+}
+
+.piece.moving {
+  animation: piece-move 0.3s ease forwards;
+}
+
+@keyframes piece-move {
+  from {
+    transform: translate(var(--dx), var(--dy));
+  }
+  to {
+    transform: translate(0, 0);
+  }
+}
