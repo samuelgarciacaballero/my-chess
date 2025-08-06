@@ -12,6 +12,7 @@ import { useSettingsStore } from "./stores/useSettingsStore";
 import PromotionModal from "./components/PromotionModal";
 import CustomDragLayer from "./components/CustomDragLayer";
 import "./App.css";
+import { WHITE } from "chess.js";
 
 // import type { Card } from "./stores/useCardStore";
 
@@ -57,7 +58,7 @@ const App: React.FC = () => {
           alignItems: "center",
         }}
       >
-        <h1>My Chess MVP</h1>
+        <h1>Magic Chess</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
