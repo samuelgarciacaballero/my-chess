@@ -75,9 +75,11 @@ const App: React.FC = () => {
 
       <TurnIndicator />
 
-      {localMultiplayer && (
-        <Hand player={turn === "w" ? "b" : "w"} position="top" faceDown />
-      )}
+      <Hand
+        player={localMultiplayer ? (turn === "w" ? "b" : "w") : "b"}
+        position="top"
+        readOnly
+      />
 
       <div className="board-area">
         <Board rotated={localMultiplayer && turn === "b"} />
