@@ -162,6 +162,9 @@ export const useCardStore = create<CardState>((set) => ({
   discardCard: (id) =>
     set((state) => ({
       hand: state.hand.filter((c) => c.id !== id),
+      opponentHand: state.opponentHand.filter((c) => c.id !== id),
+      selectedCard:
+        state.selectedCard?.id === id ? null : state.selectedCard,
     })),
 
   markFirstCapture: (captorColor) =>
@@ -187,12 +190,16 @@ export const useCardStore = create<CardState>((set) => ({
     }),
 
   selectCard: (id) =>
-    set((state) => ({
-      selectedCard:
-        state.selectedCard?.id === id
-          ? null
-          : state.hand.find((c) => c.id === id) || null,
-    })),
+    set((state) => {
+      if (state.selectedCard?.id === id) {
+        return { selectedCard: null };
+      }
+      const fromHand = state.hand.find((c) => c.id === id);
+      if (fromHand) return { selectedCard: fromHand };
+      const fromOpp = state.opponentHand.find((c) => c.id === id);
+      if (fromOpp) return { selectedCard: fromOpp };
+      return { selectedCard: null };
+    }),
 
   drawSpecificToHand: (id) =>
     set((state) => {
