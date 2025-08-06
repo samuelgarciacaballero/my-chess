@@ -20,7 +20,7 @@ const initialDeck: Card[] = [
   },
   {
     id: "pm2",
-    name: "Peón miedica (raro)",
+    name: "Retirada táctica",
     description: "Mover peón hacia atrás y comer en diagonal hacia atrás",
     rarity: "rare",
     effectKey: "pawnBackwardCapture",
@@ -55,14 +55,14 @@ const initialDeck: Card[] = [
   },
   {
     id: "alfil-r",
-    name: "Alfil racista",
-    description: "Mover alfil hacia atrás y cambiar color de casilla",
+    name: "Impulso",
+    description: "Mover alfil hacia atrás y cambiar color de casilla sin comer",
     rarity: "normal",
     effectKey: "bishopReverseAndFlip",
   },
   {
     id: "alfil-z",
-    name: "Alfil zoofílico",
+    name: "Cambiazo",
     description: "Cambia un alfil por un caballo (mismo color)",
     rarity: "rare",
     effectKey: "bishopToKnight",
@@ -92,6 +92,13 @@ const initialDeck: Card[] = [
     id: "dejavu",
     name: "DEJAVÚ",
     description: "Retroceder al estado del turno anterior",
+    rarity: "mythic",
+    effectKey: "undoTurn",
+  },
+  {
+    id: "ocultas",
+    name: "Artes Ocultas",
+    description: "Al lanzar esta carta robas otra que no es visible para el rival",
     rarity: "mythic",
     effectKey: "undoTurn",
   },
@@ -162,6 +169,9 @@ export const useCardStore = create<CardState>((set) => ({
   discardCard: (id) =>
     set((state) => ({
       hand: state.hand.filter((c) => c.id !== id),
+      opponentHand: state.opponentHand.filter((c) => c.id !== id),
+      selectedCard:
+        state.selectedCard?.id === id ? null : state.selectedCard,
     })),
 
   markFirstCapture: (captorColor) =>
@@ -187,12 +197,16 @@ export const useCardStore = create<CardState>((set) => ({
     }),
 
   selectCard: (id) =>
-    set((state) => ({
-      selectedCard:
-        state.selectedCard?.id === id
-          ? null
-          : state.hand.find((c) => c.id === id) || null,
-    })),
+    set((state) => {
+      if (state.selectedCard?.id === id) {
+        return { selectedCard: null };
+      }
+      const fromHand = state.hand.find((c) => c.id === id);
+      if (fromHand) return { selectedCard: fromHand };
+      const fromOpp = state.opponentHand.find((c) => c.id === id);
+      if (fromOpp) return { selectedCard: fromOpp };
+      return { selectedCard: null };
+    }),
 
   drawSpecificToHand: (id) =>
     set((state) => {
