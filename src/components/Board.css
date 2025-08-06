@@ -38,14 +38,19 @@
   font-size: 0.75rem;
   text-align: center;
   color: #555;
+  height: 1rem;
+  pointer-events: none;
 }
 
 .coord-files.top {
-  top: -1rem;
+  top: 0;
+  transform: translateY(-100%);
 }
 
 .coord-files.bottom {
-  bottom: -1rem;
+  bottom: 0;
+  transform: translateY(100%);
+
 }
 
 .coord-ranks {
@@ -56,6 +61,8 @@
   grid-template-rows: repeat(8, var(--square));
   font-size: 0.75rem;
   color: #555;
+  pointer-events: none;
+
 }
 
 .coord-ranks.left {
@@ -66,7 +73,11 @@
   right: -1rem;
 }
 
-.coord-files span,
+.coord-files span {
+  line-height: 1rem;
+}
+
+
 .coord-ranks span {
   line-height: var(--square);
 }
