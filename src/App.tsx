@@ -86,6 +86,7 @@ const App: React.FC = () => {
 
       <div className="board-area">
         {showHistory && <HistoryPanel />}
+
         <Board rotated={localMultiplayer && turn === "b"} />
         {initialFaceUp && <FaceUpCard card={initialFaceUp} />}
       </div>

@@ -53,6 +53,7 @@ function loadSnapshot(snap: Snapshot) {
     blockedType: snap.blockedType,
     skipCaptureFor: snap.skipCaptureFor,
   });
+
 }
 
 export const useHistoryStore = create<HistoryState>((set, get) => ({

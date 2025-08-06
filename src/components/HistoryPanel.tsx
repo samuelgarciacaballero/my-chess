@@ -69,6 +69,7 @@ const HistoryPanel: React.FC = () => {
           <small>Rarity: {hover.card.rarity}</small>
         </div>
       )}
+
     </div>
   );
 };

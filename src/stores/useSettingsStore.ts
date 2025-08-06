@@ -9,6 +9,7 @@ interface SettingsState {
   toggleLocalMultiplayer: () => void;
   /** Toggle visibility of the history panel */
   toggleHistory: () => void;
+
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -17,5 +18,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   toggleLocalMultiplayer: () =>
     set((s) => ({ localMultiplayer: !s.localMultiplayer })),
   toggleHistory: () => set((s) => ({ showHistory: !s.showHistory })),
+
 }));
 
