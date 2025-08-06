@@ -7,10 +7,10 @@ import './Hand.css';
 interface HandProps {
   player: 'w' | 'b';
   position: 'top' | 'bottom';
-  faceDown?: boolean;
+  readOnly?: boolean;
 }
 
-const Hand: React.FC<HandProps> = ({ player, position, faceDown }) => {
+const Hand: React.FC<HandProps> = ({ player, position, readOnly }) => {
   const hand = useCardStore((s) =>
     player === 'w' ? s.hand : s.opponentHand
   );
@@ -29,18 +29,15 @@ const Hand: React.FC<HandProps> = ({ player, position, faceDown }) => {
 
   return (
     <div className={`hand ${position}`}>
-      {faceDown
-        ? hand.map((c) => (
-            <div key={c.id} className="card back">🂠</div>
-          ))
-        : hand.map((card) => (
-            <CardView
-              key={card.id}
-              card={card}
-              isSelected={selectedCard?.id === card.id}
-              onSelect={selectCard}
-            />
-          ))}
+      {hand.map((card) => (
+        <CardView
+          key={card.id}
+          card={card}
+          isSelected={!readOnly && selectedCard?.id === card.id}
+          onSelect={readOnly ? undefined : selectCard}
+          readOnly={readOnly}
+        />
+      ))}
     </div>
   );
 };
