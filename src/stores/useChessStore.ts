@@ -18,11 +18,77 @@ interface PromotionRequest {
 
 export type SquarePiece = Piece | null;
 
+const knightMoves = [
+  [1, 2],
+  [2, 1],
+  [2, -1],
+  [1, -2],
+  [-1, -2],
+  [-2, -1],
+  [-2, 1],
+  [-1, 2],
+];
+
+function isSquareThreatenedByCard(
+  game: Chess,
+  square: Square,
+  color: Color,
+): boolean {
+  const oppColor: Color = color === "w" ? "b" : "w";
+  const cardStore = useCardStore.getState();
+  const oppCards =
+    oppColor === "w" ? cardStore.hand : cardStore.opponentHand;
+  const board = game.board() as SquarePiece[][];
+
+  if (oppCards.some((c) => c.effectKey === "queenKnightMove")) {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = board[r][c];
+        if (piece?.color === oppColor && piece.type === "q") {
+          for (const [dr, dc] of knightMoves) {
+            const nr = r + dr;
+            const nc = c + dc;
+            if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue;
+            const target = (`abcdefgh`[nc] + (8 - nr)) as Square;
+            const occ = game.get(target);
+            if (occ?.color === oppColor) continue;
+            if (target === square) return true;
+          }
+        }
+      }
+    }
+  }
+
+  if (oppCards.some((c) => c.effectKey === "pawnBackwardCapture")) {
+    const dir = oppColor === "w" ? -1 : 1;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = board[r][c];
+        if (piece?.color === oppColor && piece.type === "p") {
+          const nr = r + dir;
+          if (nr < 0 || nr > 7) continue;
+          for (const dc of [-1, 1]) {
+            const nc = c + dc;
+            if (nc < 0 || nc > 7) continue;
+            const target = (`abcdefgh`[nc] + (8 - nr)) as Square;
+            const occ = game.get(target);
+            if (occ?.color === oppColor) continue;
+            if (target === square) return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 interface ChessState {
   game: Chess;
   board: SquarePiece[][];
   turn: Color;
   lastMove: LastMove;
+  selectedFrom: Square | null;
   blockedSquare: Square | null;
   blockedBy: Color | null;
   blockedType: "normal" | "rare" | null;
@@ -37,6 +103,9 @@ interface ChessState {
   promotionRequest: PromotionRequest | null;
   /** Selecciona pieza de promoción tras petición */
   selectPromotion: (pieceType: PieceSymbol) => void;
+
+  /** Selecciona/deselecciona una casilla de origen para mover por clic */
+  selectFrom: (sq: Square | null) => void;
 
   move: (from: Square, to: Square, effectKey?: string) => boolean;
   blockSquareAt: (sq: Square) => void;
@@ -54,6 +123,7 @@ export const useChessStore = create<ChessState>((set, get) => {
     board: game.board() as SquarePiece[][],
     turn: game.turn(),
     lastMove: { from: null, to: null },
+    selectedFrom: null,
     blockedSquare: null,
     blockedBy: null,
     blockedType: null,
@@ -81,11 +151,16 @@ export const useChessStore = create<ChessState>((set, get) => {
       // NOTA: aquí podrías añadir lógica extra como robo de carta, descartes, etc.
     },
 
+    selectFrom: (sq) => set({ selectedFrom: sq }),
+
     move: (from, to, effectKey) => {
-      const cardStore = useCardStore.getState();
-      const currentTurn = get().turn;
-      const piece = game.get(from as Square);
-      if (!piece || piece.color !== currentTurn) return false;
+      try {
+        const cardStore = useCardStore.getState();
+        const currentTurn = get().turn;
+        const piece = game.get(from as Square);
+        if (!piece || piece.color !== currentTurn) return false;
+
+        const fenBefore = game.fen();
 
       // --- 1) Detección de PROMOCIÓN DE PEÓN ---
       const isPawn = piece.type === "p";
@@ -341,6 +416,17 @@ export const useChessStore = create<ChessState>((set, get) => {
       }
       if (!allowed) return false;
 
+      if (
+        piece.type === "k" &&
+        isSquareThreatenedByCard(game, to as Square, piece.color)
+      ) {
+        set({
+          notification:
+            "Esa casilla del rey está amenazada por una carta rival",
+        });
+        return false;
+      }
+
       // --- 8) Ejecutar movimiento o efecto manual ---
       if (manual && effectUsed) {
         if (isB2K) {
@@ -351,6 +437,14 @@ export const useChessStore = create<ChessState>((set, get) => {
           game.put(knight, from as Square);
           movedColor = currentTurn;
           resultCaptured = undefined;
+          if (game.inCheck()) {
+            game.load(fenBefore);
+            set({
+              notification:
+                "Debes bloquear el jaque o mover tu rey fuera del jaque",
+            });
+            return false;
+          }
           const fen = game.fen().split(" ");
           fen[1] = movedColor === "w" ? "b" : "w";
           game.load(fen.join(" "));
@@ -361,13 +455,28 @@ export const useChessStore = create<ChessState>((set, get) => {
           game.put({ type: piece.type, color: piece.color }, to as Square);
           movedColor = piece.color;
           resultCaptured = targetPiece?.type;
+          if (game.inCheck()) {
+            game.load(fenBefore);
+            set({
+              notification:
+                "Debes bloquear el jaque o mover tu rey fuera del jaque",
+            });
+            return false;
+          }
           const fen = game.fen().split(" ");
           fen[1] = movedColor === "w" ? "b" : "w";
           game.load(fen.join(" "));
         }
       } else {
         const m = game.move({ from, to });
-        if (!m) return false;
+        if (!m) {
+          set({
+            notification: game.inCheck()
+              ? "Debes bloquear el jaque o mover tu rey"
+              : "Movimiento ilegal",
+          });
+          return false;
+        }
         movedColor = m.color;
         resultCaptured = m.captured;
       }
@@ -421,6 +530,11 @@ export const useChessStore = create<ChessState>((set, get) => {
       }
 
       return true;
+      } catch (e) {
+        console.error(e);
+        set({ notification: `Error: ${(e as Error).message}` });
+        return false;
+      }
     },
 
     blockSquareAt: (sq: Square) => {

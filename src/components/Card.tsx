@@ -8,11 +8,17 @@ import './Card.css';
 interface CardProps {
   card: Card;
   isSelected: boolean;
-  onSelect: (id: string) => void;
+  onSelect?: (id: string) => void;
+  readOnly?: boolean;
 }
 
-const CardView: React.FC<CardProps> = ({ card, isSelected, onSelect }) => {
-  const discardCard = useCardStore(state => state.discardCard);
+const CardView: React.FC<CardProps> = ({
+  card,
+  isSelected,
+  onSelect,
+  readOnly,
+}) => {
+  const discardCard = useCardStore((state) => state.discardCard);
 
   const handleDiscard = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -27,13 +33,15 @@ const CardView: React.FC<CardProps> = ({ card, isSelected, onSelect }) => {
 
   return (
     <div
-      onClick={() => onSelect(card.id)}
+      onClick={() => onSelect?.(card.id)}
       className={cls}
       style={{ backgroundColor: bgColor }}
     >
-      <button onClick={handleDiscard} className="discard-btn">
-        ×
-      </button>
+      {!readOnly && (
+        <button onClick={handleDiscard} className="discard-btn">
+          ×
+        </button>
+      )}
 
       <h4 style={{ margin: '0 0 0.25rem' }}>{card.name}</h4>
       <p style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>
