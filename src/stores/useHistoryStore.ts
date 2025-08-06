@@ -7,6 +7,7 @@ export interface HistoryState {
   prev: () => void;
   next: () => void;
   backToCurrent: () => void;
+
 }
 
 export const useHistoryStore = create<HistoryState>((set, get) => ({
@@ -16,4 +17,5 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   prev: () => set(state => ({ viewIndex: Math.max(0, state.viewIndex - 1) })),
   next: () => set(state => ({ viewIndex: Math.min(get().events.length - 1, state.viewIndex + 1) })),
   backToCurrent: () => set({ viewIndex: get().events.length - 1 }),
+
 }));

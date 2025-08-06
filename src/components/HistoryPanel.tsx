@@ -24,6 +24,7 @@ const HistoryPanel: React.FC = () => {
         <button onClick={next}>Next</button>
         <button onClick={backToCurrent}>Current</button>
       </div>
+
     </div>
   );
 };
