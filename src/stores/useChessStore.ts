@@ -178,9 +178,7 @@ export const useChessStore = create<ChessState>((set, get) => {
           game.load(fenParts.join(" "));
           const activeHand =
             currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
-          const sel = activeHand.find(
-            (c) => c.effectKey === "kingFreeCastle"
-          );
+          const sel = activeHand.find((c) => c.effectKey === "kingFreeCastle");
           if (sel) {
             cardStore.discardCard(sel.id);
             cardStore.selectCard("");
@@ -204,9 +202,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         const movedColor = m.color;
         const activeHand =
           currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
-        const sel = activeHand.find(
-          (c) => c.effectKey === "noCaptureNextTurn"
-        );
+        const sel = activeHand.find((c) => c.effectKey === "noCaptureNextTurn");
         if (sel) {
           cardStore.discardCard(sel.id);
           cardStore.selectCard("");
@@ -435,18 +431,18 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (!sel) return;
 
       const isRare = sel.effectKey === "blockSquareRare";
-      const next = st.turn === "w" ? "b" : "w";
+      // const next = st.turn === "w" ? "b" : "w";
 
-      // reconstruimos FEN con el turno alternado
-      const f = st.game.fen().split(" ");
-      f[1] = next;
-      st.game.load(f.join(" ")); // ← aquí estaba el bug: usar join(" ") no join("")
+      // // reconstruimos FEN con el turno alternado
+      // const f = st.game.fen().split(" ");
+      // f[1] = next;
+      // st.game.load(f.join(" ")); // ← aquí estaba el bug: usar join(" ") no join("")
 
       set({
         blockedSquare: sq,
         blockedBy: st.turn,
         blockedType: isRare ? "rare" : "normal",
-        turn: next,
+        // turn: next,
         board: st.game.board() as SquarePiece[][],
         skipCaptureFor: st.skipCaptureFor,
       });
