@@ -7,6 +7,14 @@
   margin: 1rem auto;
 }
 
+.board.rotated {
+  transform: rotate(180deg);
+}
+
+.board.rotated .square-container {
+  transform: rotate(180deg);
+}
+
 /* Colores base, dimensiones en Square.css */
 .square.light {
   background-color: #f0d9b5;

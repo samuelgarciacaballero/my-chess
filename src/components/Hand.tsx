@@ -4,28 +4,43 @@ import { useCardStore } from '../stores/useCardStore';
 import CardView from './Card';
 import './Hand.css';
 
-const Hand: React.FC = () => {
-  const hand = useCardStore(state => state.hand);
-  const selectedCard = useCardStore(state => state.selectedCard);
-  const drawCard = useCardStore(state => state.drawCard);
-  const selectCard = useCardStore(state => state.selectCard);
+interface HandProps {
+  player: 'w' | 'b';
+  position: 'top' | 'bottom';
+  faceDown?: boolean;
+}
 
-  // Al montar el componente, robamos la carta inicial si procede
+const Hand: React.FC<HandProps> = ({ player, position, faceDown }) => {
+  const hand = useCardStore((s) =>
+    player === 'w' ? s.hand : s.opponentHand
+  );
+  const selectedCard = useCardStore((s) => s.selectedCard);
+  const drawFn = useCardStore((s) =>
+    player === 'w' ? s.drawCard : s.drawOpponentCard
+  );
+  const selectCard = useCardStore((s) => s.selectCard);
+
+  // Roba la carta inicial solo si la mano está vacía
   useEffect(() => {
-    // En este store ahora drawCard no necesita parámetro
-    drawCard();
-  }, [drawCard]);
+    if (hand.length === 0) {
+      drawFn();
+    }
+  }, [drawFn, hand.length]);
 
   return (
-    <div className="hand">
-      {hand.map((card) => (
-        <CardView
-          key={card.id}
-          card={card}
-          isSelected={selectedCard?.id === card.id}
-          onSelect={selectCard}
-        />
-      ))}
+    <div className={`hand ${position}`}>
+      {faceDown
+        ? hand.map((c) => (
+            <div key={c.id} className="card back">🂠</div>
+          ))
+        : hand.map((card) => (
+            <CardView
+              key={card.id}
+              card={card}
+              isSelected={selectedCard?.id === card.id}
+              onSelect={selectCard}
+            />
+          ))}
     </div>
   );
 };

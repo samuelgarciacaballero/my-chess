@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { Chess } from "chess.js";
 import type { Piece, Color, Square, Move, PieceSymbol } from "chess.js";
 import { useCardStore } from "./useCardStore";
+import { useHistoryStore } from "./useHistoryStore";
 
 export interface LastMove {
   from: Square | null;
@@ -83,9 +84,17 @@ export const useChessStore = create<ChessState>((set, get) => {
 
     move: (from, to, effectKey) => {
       const cardStore = useCardStore.getState();
+      const history = useHistoryStore.getState();
+      if (history.viewIndex !== history.currentIndex) return false;
       const currentTurn = get().turn;
       const piece = game.get(from as Square);
       if (!piece || piece.color !== currentTurn) return false;
+      const usedCard = effectKey
+        ? (currentTurn === "w"
+            ? cardStore.hand
+            : cardStore.opponentHand
+          ).find((c) => c.effectKey === effectKey)
+        : undefined;
 
       // --- 1) Detección de PROMOCIÓN DE PEÓN ---
       const isPawn = piece.type === "p";
@@ -110,7 +119,9 @@ export const useChessStore = create<ChessState>((set, get) => {
 
       // --- 3) Efecto undoTurn (DEJAVÚ) ---
       if (effectKey === "undoTurn") {
-        const sel = cardStore.hand.find((c) => c.effectKey === "undoTurn");
+        const activeHand =
+          currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
+        const sel = activeHand.find((c) => c.effectKey === "undoTurn");
         if (!sel) return false;
         if (
           window.confirm("¿Deseas usar DEJAVÚ para deshacer tu último turno?")
@@ -130,6 +141,7 @@ export const useChessStore = create<ChessState>((set, get) => {
             blockedType: null,
             skipCaptureFor: null,
           });
+          useHistoryStore.getState().addCard(currentTurn, sel);
           return true;
         }
         return false;
@@ -174,7 +186,9 @@ export const useChessStore = create<ChessState>((set, get) => {
           fenParts[2] = piece.color === "w" ? "KQ" : "kq";
           fenParts[1] = currentTurn; // mantenemos turno interno
           game.load(fenParts.join(" "));
-          const sel = cardStore.hand.find(
+          const activeHand =
+            currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
+          const sel = activeHand.find(
             (c) => c.effectKey === "kingFreeCastle"
           );
           if (sel) {
@@ -198,7 +212,9 @@ export const useChessStore = create<ChessState>((set, get) => {
         const m = game.move({ from, to });
         if (!m) return false;
         const movedColor = m.color;
-        const sel = cardStore.hand.find(
+        const activeHand =
+          currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
+        const sel = activeHand.find(
           (c) => c.effectKey === "noCaptureNextTurn"
         );
         if (sel) {
@@ -212,6 +228,8 @@ export const useChessStore = create<ChessState>((set, get) => {
           lastMove: { from, to },
           skipCaptureFor: opponent,
         });
+        useHistoryStore.getState().addMove(movedColor, `${from}-${to}`);
+        if (sel) useHistoryStore.getState().addCard(movedColor, sel);
         return true;
       }
 
@@ -409,18 +427,25 @@ export const useChessStore = create<ChessState>((set, get) => {
 
       // --- 12) Descartar carta usada ---
       if (effectUsed && effectKey && effectKey !== "noCaptureNextTurn") {
-        const used = cardStore.hand.find((c) => c.effectKey === effectKey);
+        const activeHand =
+          movedColor === "w" ? cardStore.hand : cardStore.opponentHand;
+        const used = activeHand.find((c) => c.effectKey === effectKey);
         if (used) {
           cardStore.discardCard(used.id);
           cardStore.selectCard("");
         }
       }
-
+      if (effectUsed && effectKey && usedCard) {
+        history.addCard(movedColor, usedCard);
+      }
+      history.addMove(movedColor, `${from}-${to}`);
       return true;
     },
 
     blockSquareAt: (sq: Square) => {
       const st = get();
+      const history = useHistoryStore.getState();
+      if (history.viewIndex !== history.currentIndex) return;
       if (st.blockedSquare || st.game.get(sq)) return;
       const cs = useCardStore.getState();
       const sel = cs.selectedCard;
@@ -445,6 +470,7 @@ export const useChessStore = create<ChessState>((set, get) => {
 
       cs.discardCard(sel.id);
       cs.selectCard("");
+      useHistoryStore.getState().addCard(st.turn, sel);
     },
 
     reset: () => {

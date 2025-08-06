@@ -32,6 +32,18 @@
     color 0.3s ease,
     text-shadow 0.3s ease;
 }
+.card.back {
+  background: #444;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.card.back .discard-btn {
+  display: none;
+}
 .card .discard-btn:hover {
   color: #ff4d4f;
   text-shadow: 0 0 6px #ff4d4f;

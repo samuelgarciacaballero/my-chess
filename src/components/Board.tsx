@@ -3,13 +3,17 @@ import Square from './Square';
 import Piece from './Piece';
 import './Board.css';
 
-const Board: React.FC = () => {
+interface BoardProps {
+  rotated?: boolean;
+}
+
+const Board: React.FC<BoardProps> = ({ rotated }) => {
   const rows = Array.from({ length: 8 }, (_, row) => row);
 
   return (
-    <div className="board">
-      {rows.map(row =>
-        rows.map(col => (
+    <div className={`board${rotated ? ' rotated' : ''}`}>
+      {rows.flatMap((row) =>
+        rows.map((col) => (
           <Square key={`${row}-${col}`} row={row} col={col}>
             <Piece row={row} col={col} />
           </Square>
