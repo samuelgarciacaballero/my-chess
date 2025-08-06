@@ -50,6 +50,7 @@
 .coord-files.bottom {
   bottom: 0;
   transform: translateY(100%);
+
 }
 
 .coord-ranks {
@@ -61,6 +62,7 @@
   font-size: 0.75rem;
   color: #555;
   pointer-events: none;
+
 }
 
 .coord-ranks.left {
@@ -74,6 +76,7 @@
 .coord-files span {
   line-height: 1rem;
 }
+
 
 .coord-ranks span {
   line-height: var(--square);
