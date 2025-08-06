@@ -21,6 +21,8 @@ const Square: React.FC<SquareProps> = ({ row, col, children }) => {
   const blockedSquare = useChessStore(s => s.blockedSquare);
   const blockedBy = useChessStore(s => s.blockedBy);
   const lastMove = useChessStore(s => s.lastMove);
+  const selectedFrom = useChessStore(s => s.selectedFrom);
+  const selectFrom = useChessStore(s => s.selectFrom);
 
   const [hover, setHover] = useState(false);
 
@@ -48,7 +50,10 @@ const Square: React.FC<SquareProps> = ({ row, col, children }) => {
   const isTo   = lastMove.to   === sq;
   const lastCls = isFrom ? " last-from" : isTo ? " last-to" : "";
 
-  const className = `square ${isLight ? "light" : "dark"}${highlight}${lastCls}`;
+  const isSelected = selectedFrom === sq;
+  const className = `square ${isLight ? "light" : "dark"}${highlight}${lastCls}${
+    isSelected ? " selected" : ""
+  }`;
 
   // Overlay permanente (casilla bloqueada)
   const permanentOverlay =
@@ -66,10 +71,20 @@ const Square: React.FC<SquareProps> = ({ row, col, children }) => {
       <div className="blocked-overlay preview">✕</div>
     ) : null;
 
-  // Click para aplicar “Boquete” normal o raro
+  // Click para aplicar “Boquete” o mover con selección
   const handleClick = () => {
+    const algebraic = sq as ChessSquare;
     if (isBlockingCard) {
-      blockSquareAt(sq as ChessSquare);
+      blockSquareAt(algebraic);
+      return;
+    }
+    if (selectedFrom) {
+      if (selectedFrom === algebraic) {
+        selectFrom(null);
+      } else {
+        const moved = move(selectedFrom, algebraic, selectedCard?.effectKey);
+        if (moved) selectFrom(null);
+      }
     }
   };
 
