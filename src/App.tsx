@@ -11,6 +11,7 @@ import { useChessStore } from "./stores/useChessStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
 import PromotionModal from "./components/PromotionModal";
 import CustomDragLayer from "./components/CustomDragLayer";
+import HistoryPanel from "./components/HistoryPanel";
 import "./App.css";
 
 // import type { Card } from "./stores/useCardStore";
@@ -79,6 +80,7 @@ const App: React.FC = () => {
       )}
 
       <div className="board-area">
+        <HistoryPanel />
         <Board rotated={localMultiplayer && turn === "b"} />
         {initialFaceUp && <FaceUpCard card={initialFaceUp} />}
       </div>
