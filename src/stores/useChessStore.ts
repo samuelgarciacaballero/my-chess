@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { Chess } from "chess.js";
 import type { Piece, Color, Square, Move, PieceSymbol } from "chess.js";
 import { useCardStore } from "./useCardStore";
+import { useOnlineStore } from "./useOnlineStore";
 
 export interface LastMove {
   from: Square | null;
@@ -103,7 +104,12 @@ interface ChessState {
   /** Selecciona pieza de promoción tras petición */
   selectPromotion: (pieceType: PieceSymbol) => void;
 
-  move: (from: Square, to: Square, effectKey?: string) => boolean;
+  move: (
+    from: Square,
+    to: Square,
+    effectKey?: string,
+    skipBroadcast?: boolean,
+  ) => boolean;
   blockSquareAt: (sq: Square) => void;
   reset: () => void;
 }
@@ -143,15 +149,32 @@ export const useChessStore = create<ChessState>((set, get) => {
         lastMove: { from, to },
         promotionRequest: null,
       });
-      // NOTA: aquí podrías añadir lógica extra como robo de carta, descartes, etc.
+      const online = useOnlineStore.getState();
+      if (online.connected) {
+        online.socket?.send(
+          JSON.stringify({ type: "move", from, to, promotion: pieceType })
+        );
+      }
     },
 
-    move: (from, to, effectKey) => {
+    move: (from, to, effectKey, skipBroadcast = false) => {
       try {
         const cardStore = useCardStore.getState();
         const currentTurn = get().turn;
+        const online = useOnlineStore.getState();
+        if (online.connected && !skipBroadcast && online.color !== currentTurn) {
+          return false;
+        }
         const piece = game.get(from as Square);
         if (!piece || piece.color !== currentTurn) return false;
+
+        const maybeBroadcast = () => {
+          if (!skipBroadcast && online.connected) {
+            online.socket?.send(
+              JSON.stringify({ type: "move", from, to, effectKey }),
+            );
+          }
+        };
 
         const fenBefore = game.fen();
 
@@ -163,6 +186,7 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (isPawn && isLastRank && !effectKey) {
         // abrimos menú de promoción
         set({ promotionRequest: { from, to, color: piece.color } });
+        maybeBroadcast();
         return true;
       }
 
@@ -200,6 +224,7 @@ export const useChessStore = create<ChessState>((set, get) => {
             blockedType: null,
             skipCaptureFor: null,
           });
+          maybeBroadcast();
           return true;
         }
         return false;
@@ -251,15 +276,16 @@ export const useChessStore = create<ChessState>((set, get) => {
             cardStore.discardCard(sel.id);
             cardStore.selectCard("");
           }
-          set({
-            board: game.board() as SquarePiece[][],
-            turn: currentTurn,
-            lastMove: { from, to: home },
-          });
-          return true;
+            set({
+              board: game.board() as SquarePiece[][],
+              turn: currentTurn,
+              lastMove: { from, to: home },
+            });
+            maybeBroadcast();
+            return true;
+          }
+          return false;
         }
-        return false;
-      }
 
       // --- 6) Efecto noCaptureNextTurn ---
       if (effectKey === "noCaptureNextTurn") {
@@ -276,14 +302,15 @@ export const useChessStore = create<ChessState>((set, get) => {
           cardStore.selectCard("");
         }
         const opponent = movedColor === "w" ? "b" : "w";
-        set({
-          board: game.board() as SquarePiece[][],
-          turn: opponent,
-          lastMove: { from, to },
-          skipCaptureFor: opponent,
-        });
-        return true;
-      }
+          set({
+            board: game.board() as SquarePiece[][],
+            turn: opponent,
+            lastMove: { from, to },
+            skipCaptureFor: opponent,
+          });
+          maybeBroadcast();
+          return true;
+        }
 
       // --- 7) Movimientos legales y otros efectos manuales ---
       const legalMoves = game.moves({ verbose: true }) as Move[];
@@ -478,13 +505,14 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (resultCaptured && !cardStore.hasFirstCapture) {
         cardStore.markFirstCapture(movedColor);
         const nt = movedColor === "w" ? "b" : "w";
-        set({
-          board: game.board() as SquarePiece[][],
-          turn: nt,
-          lastMove: { from, to },
-        });
-        return true;
-      }
+          set({
+            board: game.board() as SquarePiece[][],
+            turn: nt,
+            lastMove: { from, to },
+          });
+          maybeBroadcast();
+          return true;
+        }
 
       // --- 10) Cambio de turno y limpieza de boquetes ---
       const prevSkip = get().skipCaptureFor;
@@ -503,7 +531,7 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (prevSkip === currentTurn) {
         update.skipCaptureFor = null;
       }
-      set(update);
+        set(update);
 
       // --- 11) Robar carta si no fue bloqueo ---
       if (!effectUsed) {
@@ -522,7 +550,8 @@ export const useChessStore = create<ChessState>((set, get) => {
         }
       }
 
-      return true;
+        maybeBroadcast();
+        return true;
       } catch (e) {
         console.error(e);
         set({ notification: `Error: ${(e as Error).message}` });
