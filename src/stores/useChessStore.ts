@@ -5,6 +5,7 @@ import type { Piece, Color, Square, Move, PieceSymbol } from "chess.js";
 import { useCardStore } from "./useCardStore";
 import { useOnlineStore } from "./useOnlineStore";
 
+
 export interface LastMove {
   from: Square | null;
   to: Square | null;
@@ -178,6 +179,7 @@ export const useChessStore = create<ChessState>((set, get) => {
 
         const fenBefore = game.fen();
 
+
       // --- 1) Detección de PROMOCIÓN DE PEÓN ---
       const isPawn = piece.type === "p";
       const isLastRank =
@@ -225,6 +227,7 @@ export const useChessStore = create<ChessState>((set, get) => {
             skipCaptureFor: null,
           });
           maybeBroadcast();
+
           return true;
         }
         return false;
@@ -311,6 +314,7 @@ export const useChessStore = create<ChessState>((set, get) => {
           maybeBroadcast();
           return true;
         }
+
 
       // --- 7) Movimientos legales y otros efectos manuales ---
       const legalMoves = game.moves({ verbose: true }) as Move[];
@@ -557,10 +561,13 @@ export const useChessStore = create<ChessState>((set, get) => {
         set({ notification: `Error: ${(e as Error).message}` });
         return false;
       }
+
     },
 
     blockSquareAt: (sq: Square) => {
       const st = get();
+      const history = useHistoryStore.getState();
+      if (history.viewIndex !== history.currentIndex) return;
       if (st.blockedSquare || st.game.get(sq)) return;
       const cs = useCardStore.getState();
       const sel = cs.selectedCard;
@@ -585,6 +592,7 @@ export const useChessStore = create<ChessState>((set, get) => {
 
       cs.discardCard(sel.id);
       cs.selectCard("");
+      useHistoryStore.getState().addCard(st.turn, sel);
     },
 
     reset: () => {

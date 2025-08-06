@@ -47,6 +47,7 @@ const Board: React.FC<BoardProps> = ({ rotated }) => {
           <span key={`r-${r}`}>{r}</span>
         ))}
       </div>
+
     </div>
   );
 };

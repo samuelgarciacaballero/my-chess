@@ -12,6 +12,7 @@ import { useSettingsStore } from "./stores/useSettingsStore";
 import { useOnlineStore } from "./stores/useOnlineStore";
 import PromotionModal from "./components/PromotionModal";
 import CustomDragLayer from "./components/CustomDragLayer";
+import HistoryPanel from "./components/HistoryPanel";
 import "./App.css";
 // import { WHITE } from "chess.js";
 
@@ -26,6 +27,7 @@ const App: React.FC = () => {
   const connect = useOnlineStore((s) => s.connect);
   const playerColor = useOnlineStore((s) => s.color);
   const [room, setRoom] = useState("");
+
   const [devMode, setDevMode] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -93,6 +95,9 @@ const App: React.FC = () => {
           <button onClick={() => setDevMode((d) => !d)}>
             {devMode ? "🔒 Salir Dev Mode" : "🔧 Entrar Dev Mode"}
           </button>
+          <button onClick={toggleHistory}>
+            {showHistory ? "👁️ Ocultar historial" : "📜 Mostrar historial"}
+          </button>
         </div>
       </header>
 
@@ -124,6 +129,7 @@ const App: React.FC = () => {
               : localMultiplayer && turn === "b"
           }
         />
+
         {initialFaceUp && <FaceUpCard card={initialFaceUp} />}
       </div>
       <PromotionModal />
