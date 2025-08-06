@@ -21,6 +21,8 @@ const App: React.FC = () => {
   const setInitialFaceUp = useCardStore((s) => s.setInitialFaceUp);
   const turn = useChessStore((s) => s.turn);
   const localMultiplayer = useSettingsStore((s) => s.localMultiplayer);
+  const showHistory = useSettingsStore((s) => s.showHistory);
+  const toggleHistory = useSettingsStore((s) => s.toggleHistory);
   const [devMode, setDevMode] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -68,6 +70,9 @@ const App: React.FC = () => {
           <button onClick={() => setDevMode((d) => !d)}>
             {devMode ? "🔒 Salir Dev Mode" : "🔧 Entrar Dev Mode"}
           </button>
+          <button onClick={toggleHistory}>
+            {showHistory ? "👁️ Ocultar historial" : "📜 Mostrar historial"}
+          </button>
         </div>
       </header>
 
@@ -80,7 +85,8 @@ const App: React.FC = () => {
       )}
 
       <div className="board-area">
-        <HistoryPanel />
+        {showHistory && <HistoryPanel />}
+
         <Board rotated={localMultiplayer && turn === "b"} />
         {initialFaceUp && <FaceUpCard card={initialFaceUp} />}
       </div>
