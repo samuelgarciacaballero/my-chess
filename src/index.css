@@ -13,12 +13,12 @@
   --text-color: #213547;
   --button-bg: #f9f9f9;
   --button-hover-glow: rgba(116, 123, 255, 0.7);
-  --card-hover-glow: rgba(116, 123, 255, 0.7);
+  --card-hover-glow: rgba(97, 97, 100, 0.7);
 }
 
 .dark {
   --bg-color: #242424;
-  --text-color: rgba(255, 255, 255, 0.87);
+  --text-color: rgba(0, 0, 0, 0.87);
   --button-bg: #1a1a1a;
   --button-hover-glow: rgba(100, 108, 255, 0.7);
   --card-hover-glow: rgba(100, 108, 255, 0.7);

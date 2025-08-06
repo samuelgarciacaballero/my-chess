@@ -26,7 +26,7 @@ const DevPanel: React.FC = () => {
       border: '2px dashed #f00',
       padding: '1rem',
       margin: '1rem',
-      backgroundColor: '#fee'
+      backgroundColor: '#616164b3'
     }}>
       <h2>🔧 Dev Panel</h2>
 
@@ -40,7 +40,7 @@ const DevPanel: React.FC = () => {
       <h3>Mazo completo:</h3>
       {deck.map(card => (
         <div key={card.id} style={{ marginBottom: '0.25rem' }}>
-          {card.id}
+          {card.name}
           <button onClick={() => drawSpecificToHand(card.id)} style={{ marginLeft: '0.5rem' }}>
             + Mi mano
           </button>

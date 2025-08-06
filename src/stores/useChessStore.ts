@@ -3,7 +3,8 @@ import { create } from "zustand";
 import { Chess } from "chess.js";
 import type { Piece, Color, Square, Move, PieceSymbol } from "chess.js";
 import { useCardStore } from "./useCardStore";
-import { useHistoryStore } from "./useHistoryStore";
+import { useOnlineStore } from "./useOnlineStore";
+
 
 export interface LastMove {
   from: Square | null;
@@ -18,6 +19,71 @@ interface PromotionRequest {
 }
 
 export type SquarePiece = Piece | null;
+
+const knightMoves = [
+  [1, 2],
+  [2, 1],
+  [2, -1],
+  [1, -2],
+  [-1, -2],
+  [-2, -1],
+  [-2, 1],
+  [-1, 2],
+];
+
+function isSquareThreatenedByCard(
+  game: Chess,
+  square: Square,
+  color: Color,
+): boolean {
+  const oppColor: Color = color === "w" ? "b" : "w";
+  const cardStore = useCardStore.getState();
+  const oppCards =
+    oppColor === "w" ? cardStore.hand : cardStore.opponentHand;
+  const board = game.board() as SquarePiece[][];
+
+  if (oppCards.some((c) => c.effectKey === "queenKnightMove")) {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = board[r][c];
+        if (piece?.color === oppColor && piece.type === "q") {
+          for (const [dr, dc] of knightMoves) {
+            const nr = r + dr;
+            const nc = c + dc;
+            if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue;
+            const target = (`abcdefgh`[nc] + (8 - nr)) as Square;
+            const occ = game.get(target);
+            if (occ?.color === oppColor) continue;
+            if (target === square) return true;
+          }
+        }
+      }
+    }
+  }
+
+  if (oppCards.some((c) => c.effectKey === "pawnBackwardCapture")) {
+    const dir = oppColor === "w" ? -1 : 1;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = board[r][c];
+        if (piece?.color === oppColor && piece.type === "p") {
+          const nr = r + dir;
+          if (nr < 0 || nr > 7) continue;
+          for (const dc of [-1, 1]) {
+            const nc = c + dc;
+            if (nc < 0 || nc > 7) continue;
+            const target = (`abcdefgh`[nc] + (8 - nr)) as Square;
+            const occ = game.get(target);
+            if (occ?.color === oppColor) continue;
+            if (target === square) return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
 
 interface ChessState {
   game: Chess;
@@ -39,7 +105,12 @@ interface ChessState {
   /** Selecciona pieza de promoción tras petición */
   selectPromotion: (pieceType: PieceSymbol) => void;
 
-  move: (from: Square, to: Square, effectKey?: string) => boolean;
+  move: (
+    from: Square,
+    to: Square,
+    effectKey?: string,
+    skipBroadcast?: boolean,
+  ) => boolean;
   blockSquareAt: (sq: Square) => void;
   reset: () => void;
 }
@@ -79,22 +150,35 @@ export const useChessStore = create<ChessState>((set, get) => {
         lastMove: { from, to },
         promotionRequest: null,
       });
-      // NOTA: aquí podrías añadir lógica extra como robo de carta, descartes, etc.
+      const online = useOnlineStore.getState();
+      if (online.connected) {
+        online.socket?.send(
+          JSON.stringify({ type: "move", from, to, promotion: pieceType })
+        );
+      }
     },
 
-    move: (from, to, effectKey) => {
-      const cardStore = useCardStore.getState();
-      const history = useHistoryStore.getState();
-      if (history.viewIndex !== history.currentIndex) return false;
-      const currentTurn = get().turn;
-      const piece = game.get(from as Square);
-      if (!piece || piece.color !== currentTurn) return false;
-      const usedCard = effectKey
-        ? (currentTurn === "w"
-            ? cardStore.hand
-            : cardStore.opponentHand
-          ).find((c) => c.effectKey === effectKey)
-        : undefined;
+    move: (from, to, effectKey, skipBroadcast = false) => {
+      try {
+        const cardStore = useCardStore.getState();
+        const currentTurn = get().turn;
+        const online = useOnlineStore.getState();
+        if (online.connected && !skipBroadcast && online.color !== currentTurn) {
+          return false;
+        }
+        const piece = game.get(from as Square);
+        if (!piece || piece.color !== currentTurn) return false;
+
+        const maybeBroadcast = () => {
+          if (!skipBroadcast && online.connected) {
+            online.socket?.send(
+              JSON.stringify({ type: "move", from, to, effectKey }),
+            );
+          }
+        };
+
+        const fenBefore = game.fen();
+
 
       // --- 1) Detección de PROMOCIÓN DE PEÓN ---
       const isPawn = piece.type === "p";
@@ -104,6 +188,7 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (isPawn && isLastRank && !effectKey) {
         // abrimos menú de promoción
         set({ promotionRequest: { from, to, color: piece.color } });
+        maybeBroadcast();
         return true;
       }
 
@@ -141,7 +226,8 @@ export const useChessStore = create<ChessState>((set, get) => {
             blockedType: null,
             skipCaptureFor: null,
           });
-          useHistoryStore.getState().addCard(currentTurn, sel);
+          maybeBroadcast();
+
           return true;
         }
         return false;
@@ -188,22 +274,21 @@ export const useChessStore = create<ChessState>((set, get) => {
           game.load(fenParts.join(" "));
           const activeHand =
             currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
-          const sel = activeHand.find(
-            (c) => c.effectKey === "kingFreeCastle"
-          );
+          const sel = activeHand.find((c) => c.effectKey === "kingFreeCastle");
           if (sel) {
             cardStore.discardCard(sel.id);
             cardStore.selectCard("");
           }
-          set({
-            board: game.board() as SquarePiece[][],
-            turn: currentTurn,
-            lastMove: { from, to: home },
-          });
-          return true;
+            set({
+              board: game.board() as SquarePiece[][],
+              turn: currentTurn,
+              lastMove: { from, to: home },
+            });
+            maybeBroadcast();
+            return true;
+          }
+          return false;
         }
-        return false;
-      }
 
       // --- 6) Efecto noCaptureNextTurn ---
       if (effectKey === "noCaptureNextTurn") {
@@ -214,24 +299,22 @@ export const useChessStore = create<ChessState>((set, get) => {
         const movedColor = m.color;
         const activeHand =
           currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
-        const sel = activeHand.find(
-          (c) => c.effectKey === "noCaptureNextTurn"
-        );
+        const sel = activeHand.find((c) => c.effectKey === "noCaptureNextTurn");
         if (sel) {
           cardStore.discardCard(sel.id);
           cardStore.selectCard("");
         }
         const opponent = movedColor === "w" ? "b" : "w";
-        set({
-          board: game.board() as SquarePiece[][],
-          turn: opponent,
-          lastMove: { from, to },
-          skipCaptureFor: opponent,
-        });
-        useHistoryStore.getState().addMove(movedColor, `${from}-${to}`);
-        if (sel) useHistoryStore.getState().addCard(movedColor, sel);
-        return true;
-      }
+          set({
+            board: game.board() as SquarePiece[][],
+            turn: opponent,
+            lastMove: { from, to },
+            skipCaptureFor: opponent,
+          });
+          maybeBroadcast();
+          return true;
+        }
+
 
       // --- 7) Movimientos legales y otros efectos manuales ---
       const legalMoves = game.moves({ verbose: true }) as Move[];
@@ -357,6 +440,17 @@ export const useChessStore = create<ChessState>((set, get) => {
       }
       if (!allowed) return false;
 
+      if (
+        piece.type === "k" &&
+        isSquareThreatenedByCard(game, to as Square, piece.color)
+      ) {
+        set({
+          notification:
+            "Esa casilla del rey está amenazada por una carta rival",
+        });
+        return false;
+      }
+
       // --- 8) Ejecutar movimiento o efecto manual ---
       if (manual && effectUsed) {
         if (isB2K) {
@@ -367,6 +461,14 @@ export const useChessStore = create<ChessState>((set, get) => {
           game.put(knight, from as Square);
           movedColor = currentTurn;
           resultCaptured = undefined;
+          if (game.inCheck()) {
+            game.load(fenBefore);
+            set({
+              notification:
+                "Debes bloquear el jaque o mover tu rey fuera del jaque",
+            });
+            return false;
+          }
           const fen = game.fen().split(" ");
           fen[1] = movedColor === "w" ? "b" : "w";
           game.load(fen.join(" "));
@@ -377,13 +479,28 @@ export const useChessStore = create<ChessState>((set, get) => {
           game.put({ type: piece.type, color: piece.color }, to as Square);
           movedColor = piece.color;
           resultCaptured = targetPiece?.type;
+          if (game.inCheck()) {
+            game.load(fenBefore);
+            set({
+              notification:
+                "Debes bloquear el jaque o mover tu rey fuera del jaque",
+            });
+            return false;
+          }
           const fen = game.fen().split(" ");
           fen[1] = movedColor === "w" ? "b" : "w";
           game.load(fen.join(" "));
         }
       } else {
         const m = game.move({ from, to });
-        if (!m) return false;
+        if (!m) {
+          set({
+            notification: game.inCheck()
+              ? "Debes bloquear el jaque o mover tu rey"
+              : "Movimiento ilegal",
+          });
+          return false;
+        }
         movedColor = m.color;
         resultCaptured = m.captured;
       }
@@ -392,13 +509,14 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (resultCaptured && !cardStore.hasFirstCapture) {
         cardStore.markFirstCapture(movedColor);
         const nt = movedColor === "w" ? "b" : "w";
-        set({
-          board: game.board() as SquarePiece[][],
-          turn: nt,
-          lastMove: { from, to },
-        });
-        return true;
-      }
+          set({
+            board: game.board() as SquarePiece[][],
+            turn: nt,
+            lastMove: { from, to },
+          });
+          maybeBroadcast();
+          return true;
+        }
 
       // --- 10) Cambio de turno y limpieza de boquetes ---
       const prevSkip = get().skipCaptureFor;
@@ -417,7 +535,7 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (prevSkip === currentTurn) {
         update.skipCaptureFor = null;
       }
-      set(update);
+        set(update);
 
       // --- 11) Robar carta si no fue bloqueo ---
       if (!effectUsed) {
@@ -435,11 +553,15 @@ export const useChessStore = create<ChessState>((set, get) => {
           cardStore.selectCard("");
         }
       }
-      if (effectUsed && effectKey && usedCard) {
-        history.addCard(movedColor, usedCard);
+
+        maybeBroadcast();
+        return true;
+      } catch (e) {
+        console.error(e);
+        set({ notification: `Error: ${(e as Error).message}` });
+        return false;
       }
-      history.addMove(movedColor, `${from}-${to}`);
-      return true;
+
     },
 
     blockSquareAt: (sq: Square) => {
@@ -452,18 +574,18 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (!sel) return;
 
       const isRare = sel.effectKey === "blockSquareRare";
-      const next = st.turn === "w" ? "b" : "w";
+      // const next = st.turn === "w" ? "b" : "w";
 
-      // reconstruimos FEN con el turno alternado
-      const f = st.game.fen().split(" ");
-      f[1] = next;
-      st.game.load(f.join(" ")); // ← aquí estaba el bug: usar join(" ") no join("")
+      // // reconstruimos FEN con el turno alternado
+      // const f = st.game.fen().split(" ");
+      // f[1] = next;
+      // st.game.load(f.join(" ")); // ← aquí estaba el bug: usar join(" ") no join("")
 
       set({
         blockedSquare: sq,
         blockedBy: st.turn,
         blockedType: isRare ? "rare" : "normal",
-        turn: next,
+        // turn: next,
         board: st.game.board() as SquarePiece[][],
         skipCaptureFor: st.skipCaptureFor,
       });
