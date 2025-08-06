@@ -4,3 +4,13 @@
   justify-content: center;
   margin-top: 1rem;
 }
+
+.hand.top {
+  transform: rotate(180deg);
+  margin-bottom: 1rem;
+  margin-top: 0;
+}
+
+.hand.bottom {
+  margin-top: 1rem;
+}

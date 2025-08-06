@@ -1,6 +1,7 @@
 // src/components/DevPanel.tsx
 import React from 'react';
 import { useCardStore } from '../stores/useCardStore';
+import { useSettingsStore } from '../stores/useSettingsStore';
 
 const DevPanel: React.FC = () => {
   const deck = useCardStore(s => s.deck);
@@ -17,6 +18,9 @@ const DevPanel: React.FC = () => {
   const drawSpecificToHand = useCardStore(s => s.drawSpecificToHand);
   const drawSpecificToOpponent = useCardStore(s => s.drawSpecificToOpponent);
 
+  const localMultiplayer = useSettingsStore(s => s.localMultiplayer);
+  const toggleLocalMultiplayer = useSettingsStore(s => s.toggleLocalMultiplayer);
+
   return (
     <div style={{
       border: '2px dashed #f00',
@@ -28,7 +32,10 @@ const DevPanel: React.FC = () => {
 
       <button onClick={drawCard}>→ Robar carta jugador</button>{' '}
       <button onClick={drawOpponentCard}>→ Robar carta rival</button>{' '}
-      <button onClick={clearOpponentHand}>× Vaciar mano rival</button>
+      <button onClick={clearOpponentHand}>× Vaciar mano rival</button>{' '}
+      <button onClick={toggleLocalMultiplayer}>
+        {localMultiplayer ? 'Desactivar modo 2 jugadores' : 'Activar modo 2 jugadores'}
+      </button>
 
       <h3>Mazo completo:</h3>
       {deck.map(card => (

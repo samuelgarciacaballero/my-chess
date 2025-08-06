@@ -7,6 +7,8 @@ import TurnIndicator from "./components/TurnIndicator";
 import FaceUpCard from "./components/FaceUpCard";
 import Notification from "./components/Notification";
 import { useCardStore } from "./stores/useCardStore";
+import { useChessStore } from "./stores/useChessStore";
+import { useSettingsStore } from "./stores/useSettingsStore";
 import PromotionModal from "./components/PromotionModal";
 import CustomDragLayer from "./components/CustomDragLayer";
 import "./App.css";
@@ -16,6 +18,8 @@ import "./App.css";
 const App: React.FC = () => {
   const initialFaceUp = useCardStore((s) => s.initialFaceUp);
   const setInitialFaceUp = useCardStore((s) => s.setInitialFaceUp);
+  const turn = useChessStore((s) => s.turn);
+  const localMultiplayer = useSettingsStore((s) => s.localMultiplayer);
   const [devMode, setDevMode] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -70,12 +74,19 @@ const App: React.FC = () => {
 
       <TurnIndicator />
 
+      {localMultiplayer && (
+        <Hand player={turn === "w" ? "b" : "w"} position="top" faceDown />
+      )}
+
       <div className="board-area">
-        <Board />
+        <Board rotated={localMultiplayer && turn === "b"} />
         {initialFaceUp && <FaceUpCard card={initialFaceUp} />}
       </div>
       <PromotionModal />
-      <Hand />
+      <Hand
+        player={localMultiplayer ? turn : "w"}
+        position="bottom"
+      />
     </div>
   );
 };
