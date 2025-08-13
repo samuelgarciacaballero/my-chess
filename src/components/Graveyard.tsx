@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCardStore } from '../stores/useCardStore';
-import cardBack from '../assets/card-back.png';
+import cardBack from '../assets/card-back.jpeg';
 
 const Graveyard: React.FC = () => {
   const graveyard = useCardStore((s) => s.graveyard);
