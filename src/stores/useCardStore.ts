@@ -6,7 +6,7 @@ export type Card = {
   id: string;
   name: string;
   description: string;
-  rarity: "normal" | "rare" | "epic" | "legendary";
+  rarity: "normal" | "rare" | "epic" | "mythic" | "legendary";
   effectKey: string;
 };
 
@@ -99,7 +99,7 @@ const cardPool: Card[] = [
     id: "ocultas",
     name: "Artes Ocultas",
     description: "Al lanzar esta carta robas otra que no es visible para el rival",
-    rarity: "legendary",
+    rarity: "mythic",
     effectKey: "undoTurn",
   },
   // {
@@ -142,6 +142,7 @@ function buildDeck(): Card[] {
   (Object.keys(rarityCounts) as Card["rarity"][]).forEach((rarity) => {
     const cards = byRarity[rarity];
     const needed = rarityCounts[rarity];
+    if (cards.length === 0) return;
     for (let i = 0; i < needed; i++) {
       const template = cards[i % cards.length];
       deck.push({ ...template, id: `${template.id}-${i}` });

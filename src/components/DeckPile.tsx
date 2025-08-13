@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCardStore } from '../stores/useCardStore';
-const cardBack = 'src/assets/card-back.png';
+import cardBack from '../assets/card-back.jpeg';
 
 const DeckPile: React.FC = () => {
   const remaining = useCardStore((s) => s.deck.length);

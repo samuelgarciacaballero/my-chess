@@ -10,6 +10,8 @@ interface CardProps {
   isSelected: boolean;
   onSelect?: (id: string) => void;
   readOnly?: boolean;
+  showRarity?: boolean;
+  showDescription?: boolean;
 }
 
 const CardView: React.FC<CardProps> = ({
@@ -17,6 +19,8 @@ const CardView: React.FC<CardProps> = ({
   isSelected,
   onSelect,
   readOnly,
+  showRarity = true,
+  showDescription = true,
 }) => {
   const discardCard = useCardStore((state) => state.discardCard);
 
@@ -44,10 +48,12 @@ const CardView: React.FC<CardProps> = ({
       )}
 
       <h4 style={{ margin: '0 0 0.25rem' }}>{card.name}</h4>
-      <p style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>
-        {card.description}
-      </p>
-      <small>Rarity: {card.rarity}</small>
+      {showDescription && (
+        <p style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>
+          {card.description}
+        </p>
+      )}
+      {showRarity && <small>Rarity: {card.rarity}</small>}
     </div>
   );
 };
