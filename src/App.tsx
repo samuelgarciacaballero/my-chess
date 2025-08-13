@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const turn = useChessStore((s) => s.turn);
   const localMultiplayer = useSettingsStore((s) => s.localMultiplayer);
   const fullView = useSettingsStore((s) => s.fullView);
+  const leftHanded = useSettingsStore((s) => s.leftHanded);
   const [devMode, setDevMode] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -54,27 +55,11 @@ const App: React.FC = () => {
       <Notification />
       <CustomDragLayer />
 
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <header style={{ textAlign: "center" }}>
         <h1>Magic Chess</h1>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button
-            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-          >
-            {theme === "dark" ? "☀️ Claro" : "🌙 Oscuro"}
-          </button>
-          <button onClick={() => setDevMode((d) => !d)}>
-            {devMode ? "🔒 Salir Dev Mode" : "🔧 Entrar Dev Mode"}
-          </button>
-        </div>
       </header>
 
-      {devMode && <DevPanel />}
+      {devMode && <DevPanel theme={theme} setTheme={setTheme} />}
 
       <TurnIndicator />
 
@@ -88,12 +73,12 @@ const App: React.FC = () => {
 
       <div className="board-area">
         {!fullView && initialFaceUp && (
-          <div className="initial-card">
+          <div className={`initial-card ${leftHanded ? 'right' : 'left'}`}>
             <FaceUpCard card={initialFaceUp} />
           </div>
         )}
         {fullView && (
-          <div className="left-panel">
+          <div className={`hand-panel ${leftHanded ? 'right' : 'left'}`}>
             <Hand
               player={localMultiplayer ? (turn === "w" ? "b" : "w") : "b"}
               position="full-top"
@@ -107,7 +92,7 @@ const App: React.FC = () => {
           </div>
         )}
         <Board rotated={localMultiplayer && turn === "b"} />
-        <div className="side-piles">
+        <div className={`side-piles ${leftHanded ? 'left' : 'right'}`}>
           <DeckPile />
           <Graveyard />
         </div>
@@ -119,6 +104,12 @@ const App: React.FC = () => {
           position="bottom"
         />
       )}
+      <button
+        className="dev-toggle-button"
+        onClick={() => setDevMode((d) => !d)}
+      >
+        {devMode ? "🔒 Cerrar Dev" : "🔧 Abrir Dev"}
+      </button>
     </div>
   );
 };

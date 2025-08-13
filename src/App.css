@@ -49,29 +49,80 @@
 
 .side-piles {
   position: absolute;
-  top: 0;
-  left: calc(100% + 10rem);
-  top: calc(10% + 1rem);
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1rem;
   align-items: center;
-  padding: 1rem 0;
 }
 
-.initial-card,
-.left-panel {
-  position: absolute;
-  top: 0;
+.side-piles.right {
+  left: calc(100% + 2rem);
+}
+
+.side-piles.left {
   right: calc(100% + 2rem);
 }
 
-.left-panel {
+.initial-card {
+  position: absolute;
+  top: 0;
+}
+
+.initial-card.left {
+  right: calc(100% + 2rem);
+}
+
+.initial-card.right {
+  left: calc(100% + 2rem);
+}
+
+.hand-panel {
+  position: absolute;
+  top: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: flex-start;
   height: 100%;
   padding: 1rem 0;
   width: 300px;
+}
+
+.hand-panel.left {
+  right: calc(100% + 2rem);
+  align-items: flex-start;
+}
+
+.hand-panel.right {
+  left: calc(100% + 2rem);
+  align-items: flex-end;
+}
+
+.dev-toggle-button {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1000;
+}
+
+.dev-panel {
+  position: fixed;
+  border: 2px dashed #f00;
+  padding: 1rem;
+  background-color: rgba(97, 97, 100, 0.85);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  cursor: move;
+}
+
+.dev-panel .add-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }

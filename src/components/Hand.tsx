@@ -33,7 +33,6 @@ const Hand: React.FC<HandProps> = ({ player, position, readOnly }) => {
           showDescription={
             position !== 'full-top' && position !== 'full-bottom'
           }
-
         />
       ))}
     </div>
