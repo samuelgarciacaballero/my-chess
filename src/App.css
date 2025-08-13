@@ -73,4 +73,22 @@
   align-items: flex-start;
   height: 100%;
   padding: 1rem 0;
+  width: 300px;
+}
+
+.dev-toggle-button {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1000;
+}
+
+.dev-panel {
+  position: fixed;
+  bottom: 4rem;
+  right: 1rem;
+  border: 2px dashed #f00;
+  padding: 1rem;
+  background-color: rgba(97, 97, 100, 0.7);
+  z-index: 999;
 }
