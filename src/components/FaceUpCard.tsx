@@ -27,7 +27,7 @@ const FaceUpCard: React.FC<FaceUpCardProps> = ({ card, small }) => {
       {!small && (
         <p style={{ fontSize: '0.9rem', margin: '0.5rem 0' }}>{card.description}</p>
       )}
-      <small>Rarity: {card.rarity}</small>
+      {!small && <small>Rarity: {card.rarity}</small>}
     </div>
   );
 };
