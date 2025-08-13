@@ -112,17 +112,6 @@ const App: React.FC = () => {
           <Graveyard />
         </div>
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "1rem",
-          margin: "1rem 0",
-        }}
-      >
-        <DeckPile />
-        <Graveyard />
-      </div>
       <PromotionModal />
       {!fullView && (
         <Hand
