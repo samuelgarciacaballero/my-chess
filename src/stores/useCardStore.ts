@@ -111,8 +111,30 @@ const initialDeck: Card[] = [
   // },
 ];
 
+const rarityWeights: Record<Card["rarity"], number> = {
+  normal: 6,
+  rare: 5,
+  epic: 4,
+  mythic: 3,
+  legendary: 1,
+};
+
+function pickByWeight(cards: Card[]) {
+  const total = cards.reduce(
+    (sum, c) => sum + (rarityWeights[c.rarity] || 0),
+    0,
+  );
+  let r = Math.random() * total;
+  for (const card of cards) {
+    r -= rarityWeights[card.rarity] || 0;
+    if (r < 0) return card;
+  }
+  return cards[0];
+}
+
 interface CardState {
   deck: Card[];
+  graveyard: Card[];
   hand: Card[];
   opponentHand: Card[];
   initialFaceUp: Card | null;
@@ -132,7 +154,8 @@ interface CardState {
 }
 
 export const useCardStore = create<CardState>((set) => ({
-  deck: initialDeck,
+  deck: [...initialDeck],
+  graveyard: [],
   hand: [],
   opponentHand: [],
   initialFaceUp: null,
@@ -140,39 +163,51 @@ export const useCardStore = create<CardState>((set) => ({
   selectedCard: null,
 
   setInitialFaceUp: () =>
-    set((state) => ({
-      initialFaceUp: state.deck[Math.floor(Math.random() * state.deck.length)],
-    })),
+    set((state) => {
+      if (state.deck.length === 0) return {};
+      const pick = pickByWeight(state.deck);
+      return {
+        initialFaceUp: pick,
+        deck: state.deck.filter((c) => c.id !== pick.id),
+      };
+    }),
 
   drawCard: () =>
     set((state) => {
       if (!state.hasFirstCapture || state.hand.length >= 3) return {};
-      const available = state.deck.filter(
-        (c) => !state.hand.includes(c) && c.id !== state.initialFaceUp?.id
-      );
-      if (available.length === 0) return {};
-      const pick = available[Math.floor(Math.random() * available.length)];
-      return { hand: [...state.hand, pick] };
+      if (state.deck.length === 0) return {};
+      const pick = pickByWeight(state.deck);
+      return {
+        hand: [...state.hand, pick],
+        deck: state.deck.filter((c) => c.id !== pick.id),
+      };
     }),
 
   drawOpponentCard: () =>
     set((state) => {
-      if (!state.hasFirstCapture || state.opponentHand.length >= 3) return {};
-      const available = state.deck.filter(
-        (c) => !state.hand.includes(c) && !state.opponentHand.includes(c)
-      );
-      if (available.length === 0) return {};
-      const pick = available[Math.floor(Math.random() * available.length)];
-      return { opponentHand: [...state.opponentHand, pick] };
+      if (!state.hasFirstCapture || state.opponentHand.length >= 3)
+        return {};
+      if (state.deck.length === 0) return {};
+      const pick = pickByWeight(state.deck);
+      return {
+        opponentHand: [...state.opponentHand, pick],
+        deck: state.deck.filter((c) => c.id !== pick.id),
+      };
     }),
 
   discardCard: (id) =>
-    set((state) => ({
-      hand: state.hand.filter((c) => c.id !== id),
-      opponentHand: state.opponentHand.filter((c) => c.id !== id),
-      selectedCard:
-        state.selectedCard?.id === id ? null : state.selectedCard,
-    })),
+    set((state) => {
+      const card =
+        state.hand.find((c) => c.id === id) ||
+        state.opponentHand.find((c) => c.id === id);
+      return {
+        hand: state.hand.filter((c) => c.id !== id),
+        opponentHand: state.opponentHand.filter((c) => c.id !== id),
+        selectedCard:
+          state.selectedCard?.id === id ? null : state.selectedCard,
+        graveyard: card ? [...state.graveyard, card] : state.graveyard,
+      };
+    }),
 
   markFirstCapture: (captorColor) =>
     set((state) => {
@@ -211,15 +246,23 @@ export const useCardStore = create<CardState>((set) => ({
   drawSpecificToHand: (id) =>
     set((state) => {
       if (state.hand.length >= 3) return {};
-      const card = state.deck.find((c) => c.id === id);
-      return card ? { hand: [...state.hand, card] } : {};
+      const idx = state.deck.findIndex((c) => c.id === id);
+      if (idx === -1) return {};
+      const card = state.deck[idx];
+      const deck = [...state.deck];
+      deck.splice(idx, 1);
+      return { hand: [...state.hand, card], deck };
     }),
 
   drawSpecificToOpponent: (id) =>
     set((state) => {
       if (state.opponentHand.length >= 3) return {};
-      const card = state.deck.find((c) => c.id === id);
-      return card ? { opponentHand: [...state.opponentHand, card] } : {};
+      const idx = state.deck.findIndex((c) => c.id === id);
+      if (idx === -1) return {};
+      const card = state.deck[idx];
+      const deck = [...state.deck];
+      deck.splice(idx, 1);
+      return { opponentHand: [...state.opponentHand, card], deck };
     }),
 
   clearOpponentHand: () => set({ opponentHand: [] }),
