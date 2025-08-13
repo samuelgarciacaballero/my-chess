@@ -6,6 +6,8 @@ import DevPanel from "./components/DevPanel";
 import TurnIndicator from "./components/TurnIndicator";
 import FaceUpCard from "./components/FaceUpCard";
 import Notification from "./components/Notification";
+import DeckPile from "./components/DeckPile";
+import Graveyard from "./components/Graveyard";
 import { useCardStore } from "./stores/useCardStore";
 import { useChessStore } from "./stores/useChessStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
@@ -21,6 +23,7 @@ const App: React.FC = () => {
   const setInitialFaceUp = useCardStore((s) => s.setInitialFaceUp);
   const turn = useChessStore((s) => s.turn);
   const localMultiplayer = useSettingsStore((s) => s.localMultiplayer);
+  const fullView = useSettingsStore((s) => s.fullView);
   const [devMode, setDevMode] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -75,21 +78,58 @@ const App: React.FC = () => {
 
       <TurnIndicator />
 
-      <Hand
-        player={localMultiplayer ? (turn === "w" ? "b" : "w") : "b"}
-        position="top"
-        readOnly
-      />
+      {!fullView && (
+        <Hand
+          player={localMultiplayer ? (turn === "w" ? "b" : "w") : "b"}
+          position="top"
+          readOnly
+        />
+      )}
 
       <div className="board-area">
+        {!fullView && initialFaceUp && (
+          <div className="initial-card">
+            <FaceUpCard card={initialFaceUp} />
+          </div>
+        )}
+        {fullView && (
+          <div className="left-panel">
+            <Hand
+              player={localMultiplayer ? (turn === "w" ? "b" : "w") : "b"}
+              position="full"
+              readOnly
+            />
+            {initialFaceUp && <FaceUpCard card={initialFaceUp} small />}
+            <Hand
+              player={localMultiplayer ? turn : "w"}
+              position="full"
+            />
+          </div>
+        )}
         <Board rotated={localMultiplayer && turn === "b"} />
-        {initialFaceUp && <FaceUpCard card={initialFaceUp} />}
+        <div className="side-piles">
+          <DeckPile />
+          <Graveyard />
+        </div>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "1rem",
+          margin: "1rem 0",
+        }}
+      >
+        <DeckPile />
+        <Graveyard />
       </div>
       <PromotionModal />
-      <Hand
-        player={localMultiplayer ? turn : "w"}
-        position="bottom"
-      />
+      {!fullView && (
+        <Hand
+          player={localMultiplayer ? turn : "w"}
+          position="bottom"
+        />
+      )}
     </div>
   );
 };
