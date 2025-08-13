@@ -96,13 +96,13 @@ const App: React.FC = () => {
           <div className="left-panel">
             <Hand
               player={localMultiplayer ? (turn === "w" ? "b" : "w") : "b"}
-              position="full"
+              position="full-top"
               readOnly
             />
             {initialFaceUp && <FaceUpCard card={initialFaceUp} small />}
             <Hand
               player={localMultiplayer ? turn : "w"}
-              position="full"
+              position="full-bottom"
             />
           </div>
         )}
