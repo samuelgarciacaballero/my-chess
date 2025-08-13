@@ -30,6 +30,7 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
+
   const handleAddCard = () => {
     if (!cardToAdd) return;
     if (targetPlayer === 'w') {
@@ -66,6 +67,7 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
       style={{ top: position.y, left: position.x, transform: 'translate(-50%, -50%)' }}
       onMouseDown={handleMouseDown}
     >
+
       <h2>🔧 Dev Panel</h2>
 
       <button onClick={drawCard}>→ Robar carta jugador</button>
@@ -76,6 +78,9 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
       </button>
       <button onClick={toggleFullView}>
         {fullView ? 'Salir vista completa' : 'Vista completa'}
+      </button>{' '}
+      <button onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}>
+        {theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro'}
       </button>
       <button onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}>
         {theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro'}
@@ -83,6 +88,7 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
 
       <div className="add-card">
         <span>Añadir carta</span>
+
         <select value={cardToAdd} onChange={e => setCardToAdd(e.target.value)}>
           {deck.map(card => (
             <option key={card.id} value={card.id}>
@@ -91,6 +97,7 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
           ))}
         </select>
         <span>al jugador</span>
+
         <select
           value={targetPlayer}
           onChange={e => setTargetPlayer(e.target.value as 'w' | 'b')}
@@ -100,6 +107,7 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
         </select>
         <button onClick={handleAddCard}>Añadir</button>
       </div>
+
     </div>
   );
 };
