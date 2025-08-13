@@ -280,5 +280,9 @@ export const useCardStore = create<CardState>((set) => ({
       return { opponentHand: [...state.opponentHand, card], deck };
     }),
 
-  clearOpponentHand: () => set({ opponentHand: [] }),
+  clearOpponentHand: () =>
+    set((state) => ({
+      opponentHand: [],
+      graveyard: [...state.graveyard, ...state.opponentHand],
+    })),
 }));

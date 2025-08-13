@@ -1,17 +1,16 @@
 // src/components/DevPanel.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCardStore } from '../stores/useCardStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 
-const DevPanel: React.FC = () => {
-  const deck = useCardStore(s => s.deck);
-  const hand = useCardStore(s => s.hand);
-  const opponentHand = useCardStore(s => s.opponentHand);
-  const initialFaceUp = useCardStore(s => s.initialFaceUp);
-  const selectedCard = useCardStore(s => s.selectedCard);
+interface DevPanelProps {
+  theme: 'light' | 'dark';
+  setTheme: React.Dispatch<React.SetStateAction<'light' | 'dark'>>;
+}
 
-  const drawCard = useCardStore(s => s.drawCard);
-  const drawOpponentCard = useCardStore(s => s.drawOpponentCard);
+const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
+  const deck = useCardStore(s => s.deck);
+
   const clearOpponentHand = useCardStore(s => s.clearOpponentHand);
 
   // Nuevas acciones dev:
@@ -22,45 +21,91 @@ const DevPanel: React.FC = () => {
   const toggleLocalMultiplayer = useSettingsStore(s => s.toggleLocalMultiplayer);
   const fullView = useSettingsStore(s => s.fullView);
   const toggleFullView = useSettingsStore(s => s.toggleFullView);
+  const leftHanded = useSettingsStore(s => s.leftHanded);
+  const toggleLeftHanded = useSettingsStore(s => s.toggleLeftHanded);
+
+  const [cardToAdd, setCardToAdd] = useState(deck[0]?.id ?? '');
+  const [targetPlayer, setTargetPlayer] = useState<'w' | 'b'>('w');
+  const [position, setPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  const [dragging, setDragging] = useState(false);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  const handleAddCard = () => {
+    if (!cardToAdd) return;
+    if (targetPlayer === 'w') {
+      drawSpecificToHand(cardToAdd);
+    } else {
+      drawSpecificToOpponent(cardToAdd);
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (['BUTTON', 'SELECT', 'OPTION'].includes(target.tagName)) return;
+    setOffset({ x: e.clientX - position.x, y: e.clientY - position.y });
+    setDragging(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragging) return;
+      setPosition({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+    };
+    const handleMouseUp = () => setDragging(false);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragging, offset]);
 
   return (
-    <div style={{
-      border: '2px dashed #f00',
-      padding: '1rem',
-      margin: '1rem',
-      backgroundColor: '#616164b3'
-    }}>
+    <div
+      className="dev-panel"
+      style={{ top: position.y, left: position.x, transform: 'translate(-50%, -50%)' }}
+      onMouseDown={handleMouseDown}
+    >
       <h2>🔧 Dev Panel</h2>
 
-      <button onClick={drawCard}>→ Robar carta jugador</button>{' '}
-      <button onClick={drawOpponentCard}>→ Robar carta rival</button>{' '}
-      <button onClick={clearOpponentHand}>× Vaciar mano rival</button>{' '}
+      <button onClick={clearOpponentHand}>× Vaciar mano rival</button>
       <button onClick={toggleLocalMultiplayer}>
         {localMultiplayer ? 'Desactivar modo 2 jugadores' : 'Activar modo 2 jugadores'}
       </button>
       <button onClick={toggleFullView}>
         {fullView ? 'Salir vista completa' : 'Vista completa'}
       </button>
+      <button onClick={toggleLeftHanded}>
+        {leftHanded ? 'Modo diestros' : 'Modo zurdos'}
+      </button>
+      <button onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}>
+        {theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro'}
+      </button>
 
-      <h3>Mazo completo:</h3>
-      {deck.map(card => (
-        <div key={card.id} style={{ marginBottom: '0.25rem' }}>
-          {card.name}
-          <button onClick={() => drawSpecificToHand(card.id)} style={{ marginLeft: '0.5rem' }}>
-            + Mi mano
-          </button>
-          <button onClick={() => drawSpecificToOpponent(card.id)} style={{ marginLeft: '0.25rem' }}>
-            + Mano rival
-          </button>
-        </div>
-      ))}
-
-      <ul>
-        <li><strong>Carta mesa:</strong> {initialFaceUp?.id ?? '–'}</li>
-        <li><strong>Mi mano:</strong> {hand.map(c => c.id).join(', ') || '–'}</li>
-        <li><strong>Mano rival:</strong> {opponentHand.map(c => c.id).join(', ') || '–'}</li>
-        <li><strong>Seleccionada:</strong> {selectedCard?.id ?? '–'}</li>
-      </ul>
+      <div className="add-card">
+        <span>Añadir carta</span>
+        <select
+          className="form-select"
+          value={cardToAdd}
+          onChange={e => setCardToAdd(e.target.value)}
+        >
+          {deck.map(card => (
+            <option key={card.id} value={card.id}>
+              {card.name}
+            </option>
+          ))}
+        </select>
+        <span>al jugador</span>
+        <select
+          className="form-select"
+          value={targetPlayer}
+          onChange={e => setTargetPlayer(e.target.value as 'w' | 'b')}
+        >
+          <option value="w">blanco</option>
+          <option value="b">negro</option>
+        </select>
+        <button onClick={handleAddCard}>Añadir</button>
+      </div>
     </div>
   );
 };
