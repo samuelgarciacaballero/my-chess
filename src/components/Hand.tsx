@@ -30,6 +30,10 @@ const Hand: React.FC<HandProps> = ({ player, position, readOnly }) => {
           showRarity={
             position !== 'full-top' && position !== 'full-bottom'
           }
+          showDescription={
+            position !== 'full-top' && position !== 'full-bottom'
+          }
+
         />
       ))}
     </div>
