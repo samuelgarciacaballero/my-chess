@@ -6,7 +6,7 @@ import './Hand.css';
 
 interface HandProps {
   player: 'w' | 'b';
-  position: 'top' | 'bottom';
+  position: 'top' | 'bottom' | 'full';
   readOnly?: boolean;
 }
 
