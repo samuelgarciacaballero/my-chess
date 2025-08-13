@@ -56,6 +56,7 @@ const Graveyard: React.FC = () => {
         )}
       </div>
       <div style={{ marginTop: 4 }}>Cementerio</div>
+
     </div>
   );
 };

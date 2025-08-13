@@ -6,7 +6,7 @@ export type Card = {
   id: string;
   name: string;
   description: string;
-  rarity: "normal" | "rare" | "epic" | "mythic" | "legendary";
+  rarity: "normal" | "rare" | "epic" | "legendary";
   effectKey: string;
 };
 
@@ -92,14 +92,14 @@ const cardPool: Card[] = [
     id: "dejavu",
     name: "DEJAVÚ",
     description: "Retroceder al estado del turno anterior",
-    rarity: "mythic",
+    rarity: "legendary",
     effectKey: "undoTurn",
   },
   {
     id: "ocultas",
     name: "Artes Ocultas",
     description: "Al lanzar esta carta robas otra que no es visible para el rival",
-    rarity: "mythic",
+    rarity: "legendary",
     effectKey: "undoTurn",
   },
   // {
@@ -112,6 +112,7 @@ const cardPool: Card[] = [
 ];
 
 const rarityCounts: Record<Card["rarity"], number> = {
+
   normal: 6,
   rare: 5,
   epic: 4,
@@ -147,6 +148,7 @@ function buildDeck(): Card[] {
     }
   });
   return shuffle(deck);
+
 }
 
 interface CardState {
@@ -172,6 +174,7 @@ interface CardState {
 
 export const useCardStore = create<CardState>((set) => ({
   deck: buildDeck(),
+
   graveyard: [],
   hand: [],
   opponentHand: [],
@@ -184,6 +187,7 @@ export const useCardStore = create<CardState>((set) => ({
       if (state.deck.length === 0) return {};
       const [card, ...rest] = state.deck;
       return { initialFaceUp: card, deck: rest };
+
     }),
 
   drawCard: () =>
@@ -192,6 +196,7 @@ export const useCardStore = create<CardState>((set) => ({
       if (state.deck.length === 0) return {};
       const [card, ...rest] = state.deck;
       return { hand: [...state.hand, card], deck: rest };
+
     }),
 
   drawOpponentCard: () =>
@@ -201,6 +206,7 @@ export const useCardStore = create<CardState>((set) => ({
       if (state.deck.length === 0) return {};
       const [card, ...rest] = state.deck;
       return { opponentHand: [...state.opponentHand, card], deck: rest };
+
     }),
 
   discardCard: (id) =>

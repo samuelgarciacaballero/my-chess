@@ -29,6 +29,7 @@ const DeckPile: React.FC = () => {
         </span>
       </div>
       <div style={{ marginTop: 4 }}>Biblioteca</div>
+
     </div>
   );
 };
