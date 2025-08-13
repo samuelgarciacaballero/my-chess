@@ -14,15 +14,25 @@
   margin-top: 1rem;
 }
 
-.hand.full {
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: flex-start;
+.hand.full-top,
+.hand.full-bottom {
+  flex-wrap: nowrap;
   margin: 0;
+  width: 100%;
 }
 
-.hand.full .card {
+.hand.full-top {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.hand.full-bottom {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.hand.full-top .card,
+.hand.full-bottom .card {
   width: 90px;
   padding: 0.5rem;
   margin: 0.25rem;
