@@ -24,55 +24,19 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
   const leftHanded = useSettingsStore(s => s.leftHanded);
   const toggleLeftHanded = useSettingsStore(s => s.toggleLeftHanded);
 
-  const [cardToAdd, setCardToAdd] = useState(deck[0]?.id ?? '');
+  const [selectedCardId, setSelectedCardId] = useState(deck[0]?.id ?? '');
   const [targetPlayer, setTargetPlayer] = useState<'w' | 'b'>('w');
   const [position, setPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
   const handleAddCard = () => {
-    if (!cardToAdd) return;
+    if (!selectedCardId) return;
     if (targetPlayer === 'w') {
-      drawSpecificToHand(cardToAdd);
+      drawSpecificToHand(selectedCardId);
     } else {
-      drawSpecificToOpponent(cardToAdd);
-    }
-  };
+      drawSpecificToOpponent(selectedCardId);
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    if (['BUTTON', 'SELECT', 'OPTION'].includes(target.tagName)) return;
-    setOffset({ x: e.clientX - position.x, y: e.clientY - position.y });
-    setDragging(true);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!dragging) return;
-      setPosition({ x: e.clientX - offset.x, y: e.clientY - offset.y });
-    };
-    const handleMouseUp = () => setDragging(false);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [dragging, offset]);
-
-  const [cardToAdd, setCardToAdd] = useState(deck[0]?.id ?? '');
-  const [targetPlayer, setTargetPlayer] = useState<'w' | 'b'>('w');
-  const [position, setPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-  const [dragging, setDragging] = useState(false);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-
-
-  const handleAddCard = () => {
-    if (!cardToAdd) return;
-    if (targetPlayer === 'w') {
-      drawSpecificToHand(cardToAdd);
-    } else {
-      drawSpecificToOpponent(cardToAdd);
     }
   };
 
@@ -104,6 +68,7 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
       onMouseDown={handleMouseDown}
     >
       <h2>🔧 Dev Panel</h2>
+
       <button onClick={clearOpponentHand}>× Vaciar mano rival</button>
       <button onClick={toggleLocalMultiplayer}>
         {localMultiplayer ? 'Desactivar modo 2 jugadores' : 'Activar modo 2 jugadores'}
@@ -120,6 +85,9 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
       <button onClick={toggleLeftHanded}>
         {leftHanded ? 'Modo diestros' : 'Modo zurdos'}
       </button>
+      <button onClick={toggleLeftHanded}>
+        {leftHanded ? 'Modo diestros' : 'Modo zurdos'}
+      </button>
       <button onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}>
         {theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro'}
       </button>
@@ -128,10 +96,9 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
         <span>Añadir carta</span>
         <select
           className="form-select"
-          value={cardToAdd}
-          onChange={e => setCardToAdd(e.target.value)}
+          value={selectedCardId}
+          onChange={e => setSelectedCardId(e.target.value)}
         >
-
           {deck.map(card => (
             <option key={card.id} value={card.id}>
               {card.name}
@@ -141,7 +108,6 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
         <span>al jugador</span>
         <select
           className="form-select"
-
           value={targetPlayer}
           onChange={e => setTargetPlayer(e.target.value as 'w' | 'b')}
         >
