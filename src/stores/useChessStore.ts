@@ -88,6 +88,7 @@ interface ChessState {
   board: SquarePiece[][];
   turn: Color;
   lastMove: LastMove;
+  selectedFrom: Square | null;
   blockedSquare: Square | null;
   blockedBy: Color | null;
   blockedType: "normal" | "rare" | null;
@@ -102,6 +103,9 @@ interface ChessState {
   promotionRequest: PromotionRequest | null;
   /** Selecciona pieza de promoción tras petición */
   selectPromotion: (pieceType: PieceSymbol) => void;
+
+  /** Selecciona/deselecciona una casilla de origen para mover por clic */
+  selectFrom: (sq: Square | null) => void;
 
   move: (from: Square, to: Square, effectKey?: string) => boolean;
   blockSquareAt: (sq: Square) => void;
@@ -119,6 +123,7 @@ export const useChessStore = create<ChessState>((set, get) => {
     board: game.board() as SquarePiece[][],
     turn: game.turn(),
     lastMove: { from: null, to: null },
+    selectedFrom: null,
     blockedSquare: null,
     blockedBy: null,
     blockedType: null,
@@ -145,6 +150,8 @@ export const useChessStore = create<ChessState>((set, get) => {
       });
       // NOTA: aquí podrías añadir lógica extra como robo de carta, descartes, etc.
     },
+
+    selectFrom: (sq) => set({ selectedFrom: sq }),
 
     move: (from, to, effectKey) => {
       try {

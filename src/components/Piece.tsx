@@ -4,7 +4,8 @@ import { useDrag } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { useChessStore } from "../stores/useChessStore";
 import type { SquarePiece } from "../stores/useChessStore";
-import { fromSquare } from "../utils/coords";
+import { fromSquare, toSquare } from "../utils/coords";
+import type { Square as ChessSquare } from "chess.js";
 import "./Piece.css";
 
 const unicodeMap: Record<string, Record<"w" | "b", string>> = {
@@ -24,6 +25,9 @@ interface PieceProps {
 const Piece: React.FC<PieceProps> = ({ row, col }) => {
   const board = useChessStore((state) => state.board);
   const lastMove = useChessStore((s) => s.lastMove);
+  const selectFrom = useChessStore((s) => s.selectFrom);
+  const selectedFrom = useChessStore((s) => s.selectedFrom);
+  const turn = useChessStore((s) => s.turn);
 
   const [{ isDragging }, dragRef, preview] = useDrag({
     type: "piece",
@@ -62,6 +66,16 @@ const Piece: React.FC<PieceProps> = ({ row, col }) => {
 
   const { type, color } = square;
   const symbol = unicodeMap[type][color];
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (color !== turn) return;
+    const sq = toSquare(row, col) as ChessSquare;
+    if (selectedFrom === sq) {
+      selectFrom(null);
+    } else {
+      selectFrom(sq);
+    }
+  };
 
   return (
     <div
@@ -76,6 +90,7 @@ const Piece: React.FC<PieceProps> = ({ row, col }) => {
         opacity: isDragging ? 0.5 : 1,
         userSelect: "none",
       }}
+      onClick={handleClick}
     >
       {symbol}
     </div>
