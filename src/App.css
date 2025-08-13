@@ -50,7 +50,8 @@
 .side-piles {
   position: absolute;
   top: 0;
-  left: calc(100% + 2rem);
+  left: calc(100% + 10rem);
+  top: calc(10% + 1rem);
   display: flex;
   flex-direction: column;
   gap: 1rem;
