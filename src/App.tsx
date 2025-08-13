@@ -6,6 +6,8 @@ import DevPanel from "./components/DevPanel";
 import TurnIndicator from "./components/TurnIndicator";
 import FaceUpCard from "./components/FaceUpCard";
 import Notification from "./components/Notification";
+import DeckPile from "./components/DeckPile";
+import Graveyard from "./components/Graveyard";
 import { useCardStore } from "./stores/useCardStore";
 import { useChessStore } from "./stores/useChessStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
@@ -84,6 +86,17 @@ const App: React.FC = () => {
       <div className="board-area">
         <Board rotated={localMultiplayer && turn === "b"} />
         {initialFaceUp && <FaceUpCard card={initialFaceUp} />}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "1rem",
+          margin: "1rem 0",
+        }}
+      >
+        <DeckPile />
+        <Graveyard />
       </div>
       <PromotionModal />
       <Hand
