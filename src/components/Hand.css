@@ -15,7 +15,9 @@
 }
 
 .hand.full {
-  flex-direction: column;
+  flex-direction: row-reverse;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
   align-items: center;
   margin: 0;
 }

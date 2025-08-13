@@ -1,5 +1,5 @@
 // src/components/Hand.tsx
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useCardStore } from '../stores/useCardStore';
 import CardView from './Card';
 import './Hand.css';
@@ -15,17 +15,7 @@ const Hand: React.FC<HandProps> = ({ player, position, readOnly }) => {
     player === 'w' ? s.hand : s.opponentHand
   );
   const selectedCard = useCardStore((s) => s.selectedCard);
-  const drawFn = useCardStore((s) =>
-    player === 'w' ? s.drawCard : s.drawOpponentCard
-  );
   const selectCard = useCardStore((s) => s.selectCard);
-
-  // Roba la carta inicial solo si la mano está vacía
-  useEffect(() => {
-    if (hand.length === 0) {
-      drawFn();
-    }
-  }, [drawFn, hand.length]);
 
   return (
     <div className={`hand ${position}`}>
@@ -36,6 +26,7 @@ const Hand: React.FC<HandProps> = ({ player, position, readOnly }) => {
           isSelected={!readOnly && selectedCard?.id === card.id}
           onSelect={readOnly ? undefined : selectCard}
           readOnly={readOnly}
+          showRarity={position !== 'full'}
         />
       ))}
     </div>

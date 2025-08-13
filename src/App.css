@@ -50,23 +50,26 @@
 .side-piles {
   position: absolute;
   top: 0;
-  left: calc(100% + 1rem);
+  left: calc(100% + 2rem);
   display: flex;
   flex-direction: column;
   gap: 1rem;
   align-items: center;
+  padding: 1rem 0;
 }
 
 .initial-card,
 .left-panel {
   position: absolute;
   top: 0;
-  right: calc(100% + 1rem);
+  right: calc(100% + 2rem);
 }
 
 .left-panel {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  align-items: center;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 100%;
+  padding: 1rem 0;
 }
