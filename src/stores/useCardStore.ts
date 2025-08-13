@@ -6,7 +6,7 @@ export type Card = {
   id: string;
   name: string;
   description: string;
-  rarity: "normal" | "rare" | "epic" | "mythic" | "legendary";
+  rarity: "normal" | "rare" | "epic" | "legendary";
   effectKey: string;
 };
 
@@ -92,14 +92,14 @@ const initialDeck: Card[] = [
     id: "dejavu",
     name: "DEJAVÚ",
     description: "Retroceder al estado del turno anterior",
-    rarity: "mythic",
+    rarity: "legendary",
     effectKey: "undoTurn",
   },
   {
     id: "ocultas",
     name: "Artes Ocultas",
     description: "Al lanzar esta carta robas otra que no es visible para el rival",
-    rarity: "mythic",
+    rarity: "legendary",
     effectKey: "undoTurn",
   },
   // {
