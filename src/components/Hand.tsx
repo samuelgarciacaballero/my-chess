@@ -36,6 +36,7 @@ const Hand: React.FC<HandProps> = ({ player, position, readOnly }) => {
           isSelected={!readOnly && selectedCard?.id === card.id}
           onSelect={readOnly ? undefined : selectCard}
           readOnly={readOnly}
+          showRarity={position !== 'full'}
         />
       ))}
     </div>
