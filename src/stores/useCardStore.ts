@@ -8,6 +8,7 @@ export type Card = {
   description: string;
   rarity: "normal" | "rare" | "epic" | "mythic" | "legendary";
   effectKey: string;
+  hidden?: boolean;
 };
 
 const cardPool: Card[] = [
@@ -100,7 +101,7 @@ const cardPool: Card[] = [
     name: "Artes Ocultas",
     description: "Al lanzar esta carta robas otra que no es visible para el rival",
     rarity: "mythic",
-    effectKey: "undoTurn",
+    effectKey: "hiddenDraw",
   },
   // {
   //   id: "cupido",
@@ -164,6 +165,7 @@ interface CardState {
   setInitialFaceUp: () => void;
   drawCard: () => void;
   drawOpponentCard: () => void;
+  drawHiddenCard: (player: Color) => void;
   discardCard: (id: string) => void;
   markFirstCapture: (captorColor: Color) => void;
   selectCard: (id: string) => void;
@@ -208,6 +210,20 @@ export const useCardStore = create<CardState>((set) => ({
       const [card, ...rest] = state.deck;
       return { opponentHand: [...state.opponentHand, card], deck: rest };
 
+    }),
+
+  drawHiddenCard: (player) =>
+    set((state) => {
+      if (state.deck.length === 0) return {};
+      const [card, ...rest] = state.deck;
+      const hiddenCard = { ...card, hidden: true };
+      if (player === "w") {
+        if (state.hand.length >= 3) return {};
+        return { hand: [...state.hand, hiddenCard], deck: rest };
+      } else {
+        if (state.opponentHand.length >= 3) return {};
+        return { opponentHand: [...state.opponentHand, hiddenCard], deck: rest };
+      }
     }),
 
   discardCard: (id) =>

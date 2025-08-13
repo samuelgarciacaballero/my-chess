@@ -126,3 +126,19 @@
   align-items: center;
   gap: 0.5rem;
 }
+
+.victory-panel {
+  position: fixed;
+  border: 2px solid #4caf50;
+  padding: 1rem;
+  background-color: rgba(97, 97, 100, 0.85);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  cursor: move;
+
+}

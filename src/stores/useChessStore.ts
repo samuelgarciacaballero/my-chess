@@ -98,6 +98,9 @@ interface ChessState {
   /** Limpia el mensaje de aviso */
   clearNotification: () => void;
 
+  /** Resultado final de la partida */
+  winner: Color | 'draw' | null;
+
   /** Petición de promoción pendiente, o null si no hay */
   promotionRequest: PromotionRequest | null;
   /** Selecciona pieza de promoción tras petición */
@@ -125,6 +128,7 @@ export const useChessStore = create<ChessState>((set, get) => {
     skipCaptureFor: null,
     notification: null,
     clearNotification: () => set({ notification: null }),
+    winner: null,
 
     // --- PROMOCIÓN ---
     promotionRequest: null,
@@ -232,6 +236,32 @@ export const useChessStore = create<ChessState>((set, get) => {
           c += stepC;
           r += stepR;
         }
+      }
+
+      // --- Captura manual de rey ---
+      if (targetPiece?.type === "k") {
+        const moving = game.get(from as Square);
+        if (!moving) return false;
+        game.remove(to as Square);
+        game.remove(from as Square);
+        game.put(moving, to as Square);
+        const nextTurn = moving.color === "w" ? "b" : "w";
+        set({
+          board: game.board() as SquarePiece[][],
+          turn: nextTurn,
+          lastMove: { from, to },
+          winner: moving.color,
+        });
+        if (effectKey && effectKey !== "noCaptureNextTurn") {
+          const activeHand =
+            moving.color === "w" ? cardStore.hand : cardStore.opponentHand;
+          const used = activeHand.find((c) => c.effectKey === effectKey);
+          if (used) {
+            cardStore.discardCard(used.id);
+            cardStore.selectCard("");
+          }
+        }
+        return true;
       }
 
       // --- 5) Efecto kingFreeCastle ---
@@ -522,11 +552,17 @@ export const useChessStore = create<ChessState>((set, get) => {
         }
       }
 
+      if (game.isCheckmate()) {
+        set({ winner: movedColor });
+      } else if (game.isDraw()) {
+        set({ winner: "draw" });
+      }
+
       return true;
-      } catch (e) {
-        console.error(e);
-        set({ notification: `Error: ${(e as Error).message}` });
-        return false;
+    } catch (e) {
+      console.error(e);
+      set({ notification: `Error: ${(e as Error).message}` });
+      return false;
       }
     },
 
@@ -571,6 +607,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         skipCaptureFor: null,
         notification: null,
         promotionRequest: null,
+        winner: null,
       });
     },
   };
