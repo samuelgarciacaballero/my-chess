@@ -31,6 +31,14 @@
   justify-content: flex-start;
 }
 
+.hand-panel.right .hand.full-top {
+  flex-direction: row-reverse;
+}
+
+.hand-panel.right .hand.full-bottom {
+  flex-direction: row;
+}
+
 .hand.full-top .card,
 .hand.full-bottom .card {
   width: 90px;

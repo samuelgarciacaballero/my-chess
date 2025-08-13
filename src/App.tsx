@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const turn = useChessStore((s) => s.turn);
   const localMultiplayer = useSettingsStore((s) => s.localMultiplayer);
   const fullView = useSettingsStore((s) => s.fullView);
+  const leftHanded = useSettingsStore((s) => s.leftHanded);
   const [devMode, setDevMode] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -72,12 +73,12 @@ const App: React.FC = () => {
 
       <div className="board-area">
         {!fullView && initialFaceUp && (
-          <div className="initial-card">
+          <div className={`initial-card ${leftHanded ? 'right' : 'left'}`}>
             <FaceUpCard card={initialFaceUp} />
           </div>
         )}
         {fullView && (
-          <div className="left-panel">
+          <div className={`hand-panel ${leftHanded ? 'right' : 'left'}`}>
             <Hand
               player={localMultiplayer ? (turn === "w" ? "b" : "w") : "b"}
               position="full-top"
@@ -91,7 +92,7 @@ const App: React.FC = () => {
           </div>
         )}
         <Board rotated={localMultiplayer && turn === "b"} />
-        <div className="side-piles">
+        <div className={`side-piles ${leftHanded ? 'left' : 'right'}`}>
           <DeckPile />
           <Graveyard />
         </div>
