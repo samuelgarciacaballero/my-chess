@@ -1,9 +1,14 @@
 // src/components/DevPanel.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useCardStore } from '../stores/useCardStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 
-const DevPanel: React.FC = () => {
+interface DevPanelProps {
+  theme: 'light' | 'dark';
+  setTheme: React.Dispatch<React.SetStateAction<'light' | 'dark'>>;
+}
+
+const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
   const deck = useCardStore(s => s.deck);
   const hand = useCardStore(s => s.hand);
   const opponentHand = useCardStore(s => s.opponentHand);
@@ -23,13 +28,20 @@ const DevPanel: React.FC = () => {
   const fullView = useSettingsStore(s => s.fullView);
   const toggleFullView = useSettingsStore(s => s.toggleFullView);
 
+  const [cardToAdd, setCardToAdd] = useState(deck[0]?.id ?? '');
+  const [targetPlayer, setTargetPlayer] = useState<'w' | 'b'>('w');
+
+  const handleAddCard = () => {
+    if (!cardToAdd) return;
+    if (targetPlayer === 'w') {
+      drawSpecificToHand(cardToAdd);
+    } else {
+      drawSpecificToOpponent(cardToAdd);
+    }
+  };
+
   return (
-    <div style={{
-      border: '2px dashed #f00',
-      padding: '1rem',
-      margin: '1rem',
-      backgroundColor: '#616164b3'
-    }}>
+    <div className="dev-panel">
       <h2>🔧 Dev Panel</h2>
 
       <button onClick={drawCard}>→ Robar carta jugador</button>{' '}
@@ -40,20 +52,30 @@ const DevPanel: React.FC = () => {
       </button>
       <button onClick={toggleFullView}>
         {fullView ? 'Salir vista completa' : 'Vista completa'}
+      </button>{' '}
+      <button onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}>
+        {theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro'}
       </button>
 
-      <h3>Mazo completo:</h3>
-      {deck.map(card => (
-        <div key={card.id} style={{ marginBottom: '0.25rem' }}>
-          {card.name}
-          <button onClick={() => drawSpecificToHand(card.id)} style={{ marginLeft: '0.5rem' }}>
-            + Mi mano
-          </button>
-          <button onClick={() => drawSpecificToOpponent(card.id)} style={{ marginLeft: '0.25rem' }}>
-            + Mano rival
-          </button>
-        </div>
-      ))}
+      <div style={{ marginTop: '0.5rem' }}>
+        Añadir carta{' '}
+        <select value={cardToAdd} onChange={e => setCardToAdd(e.target.value)}>
+          {deck.map(card => (
+            <option key={card.id} value={card.id}>
+              {card.name}
+            </option>
+          ))}
+        </select>{' '}
+        al jugador{' '}
+        <select
+          value={targetPlayer}
+          onChange={e => setTargetPlayer(e.target.value as 'w' | 'b')}
+        >
+          <option value="w">blanco</option>
+          <option value="b">negro</option>
+        </select>{' '}
+        <button onClick={handleAddCard}>Añadir</button>
+      </div>
 
       <ul>
         <li><strong>Carta mesa:</strong> {initialFaceUp?.id ?? '–'}</li>

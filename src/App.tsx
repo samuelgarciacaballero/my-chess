@@ -54,27 +54,11 @@ const App: React.FC = () => {
       <Notification />
       <CustomDragLayer />
 
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <header style={{ textAlign: "center" }}>
         <h1>Magic Chess</h1>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button
-            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-          >
-            {theme === "dark" ? "☀️ Claro" : "🌙 Oscuro"}
-          </button>
-          <button onClick={() => setDevMode((d) => !d)}>
-            {devMode ? "🔒 Salir Dev Mode" : "🔧 Entrar Dev Mode"}
-          </button>
-        </div>
       </header>
 
-      {devMode && <DevPanel />}
+      {devMode && <DevPanel theme={theme} setTheme={setTheme} />}
 
       <TurnIndicator />
 
@@ -119,6 +103,12 @@ const App: React.FC = () => {
           position="bottom"
         />
       )}
+      <button
+        className="dev-toggle-button"
+        onClick={() => setDevMode((d) => !d)}
+      >
+        {devMode ? "🔒 Cerrar Dev" : "🔧 Abrir Dev"}
+      </button>
     </div>
   );
 };
