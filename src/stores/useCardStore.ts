@@ -10,7 +10,7 @@ export type Card = {
   effectKey: string;
 };
 
-const initialDeck: Card[] = [
+const cardPool: Card[] = [
   {
     id: "pm1",
     name: "Peón miedica",
@@ -111,25 +111,44 @@ const initialDeck: Card[] = [
   // },
 ];
 
-const rarityWeights: Record<Card["rarity"], number> = {
+const rarityCounts: Record<Card["rarity"], number> = {
+
   normal: 6,
   rare: 5,
   epic: 4,
   mythic: 3,
-  legendary: 1,
+  legendary: 2,
 };
 
-function pickByWeight(cards: Card[]) {
-  const total = cards.reduce(
-    (sum, c) => sum + (rarityWeights[c.rarity] || 0),
-    0,
-  );
-  let r = Math.random() * total;
-  for (const card of cards) {
-    r -= rarityWeights[card.rarity] || 0;
-    if (r < 0) return card;
+function shuffle<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
   }
-  return cards[0];
+  return result;
+}
+
+function buildDeck(): Card[] {
+  const byRarity: Record<Card["rarity"], Card[]> = {
+    normal: [],
+    rare: [],
+    epic: [],
+    mythic: [],
+    legendary: [],
+  };
+  cardPool.forEach((c) => byRarity[c.rarity].push(c));
+  const deck: Card[] = [];
+  (Object.keys(rarityCounts) as Card["rarity"][]).forEach((rarity) => {
+    const cards = byRarity[rarity];
+    const needed = rarityCounts[rarity];
+    for (let i = 0; i < needed; i++) {
+      const template = cards[i % cards.length];
+      deck.push({ ...template, id: `${template.id}-${i}` });
+    }
+  });
+  return shuffle(deck);
+
 }
 
 interface CardState {
@@ -154,7 +173,8 @@ interface CardState {
 }
 
 export const useCardStore = create<CardState>((set) => ({
-  deck: [...initialDeck],
+  deck: buildDeck(),
+
   graveyard: [],
   hand: [],
   opponentHand: [],
@@ -165,22 +185,18 @@ export const useCardStore = create<CardState>((set) => ({
   setInitialFaceUp: () =>
     set((state) => {
       if (state.deck.length === 0) return {};
-      const pick = pickByWeight(state.deck);
-      return {
-        initialFaceUp: pick,
-        deck: state.deck.filter((c) => c.id !== pick.id),
-      };
+      const [card, ...rest] = state.deck;
+      return { initialFaceUp: card, deck: rest };
+
     }),
 
   drawCard: () =>
     set((state) => {
       if (!state.hasFirstCapture || state.hand.length >= 3) return {};
       if (state.deck.length === 0) return {};
-      const pick = pickByWeight(state.deck);
-      return {
-        hand: [...state.hand, pick],
-        deck: state.deck.filter((c) => c.id !== pick.id),
-      };
+      const [card, ...rest] = state.deck;
+      return { hand: [...state.hand, card], deck: rest };
+
     }),
 
   drawOpponentCard: () =>
@@ -188,11 +204,9 @@ export const useCardStore = create<CardState>((set) => ({
       if (!state.hasFirstCapture || state.opponentHand.length >= 3)
         return {};
       if (state.deck.length === 0) return {};
-      const pick = pickByWeight(state.deck);
-      return {
-        opponentHand: [...state.opponentHand, pick],
-        deck: state.deck.filter((c) => c.id !== pick.id),
-      };
+      const [card, ...rest] = state.deck;
+      return { opponentHand: [...state.opponentHand, card], deck: rest };
+
     }),
 
   discardCard: (id) =>

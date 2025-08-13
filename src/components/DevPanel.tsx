@@ -20,6 +20,8 @@ const DevPanel: React.FC = () => {
 
   const localMultiplayer = useSettingsStore(s => s.localMultiplayer);
   const toggleLocalMultiplayer = useSettingsStore(s => s.toggleLocalMultiplayer);
+  const fullView = useSettingsStore(s => s.fullView);
+  const toggleFullView = useSettingsStore(s => s.toggleFullView);
 
   return (
     <div style={{
@@ -35,6 +37,9 @@ const DevPanel: React.FC = () => {
       <button onClick={clearOpponentHand}>× Vaciar mano rival</button>{' '}
       <button onClick={toggleLocalMultiplayer}>
         {localMultiplayer ? 'Desactivar modo 2 jugadores' : 'Activar modo 2 jugadores'}
+      </button>
+      <button onClick={toggleFullView}>
+        {fullView ? 'Salir vista completa' : 'Vista completa'}
       </button>
 
       <h3>Mazo completo:</h3>
