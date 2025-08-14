@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCardStore } from '../stores/useCardStore';
 import cardBack from '../assets/card-back.jpeg';
+import { rarityColors } from '../styles/cardColors';
 
 const Graveyard: React.FC = () => {
   const graveyard = useCardStore((s) => s.graveyard);
@@ -8,7 +9,13 @@ const Graveyard: React.FC = () => {
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <div style={{ position: 'relative', width: 80, height: 120 }}>
+      <div
+        style={{
+          position: 'relative',
+          width: 'calc(var(--square) * 8 / 3)',
+          height: 'calc(var(--square) * 4)',
+        }}
+      >
         <img
           src={cardBack}
           alt="Cementerio"
@@ -49,7 +56,18 @@ const Graveyard: React.FC = () => {
             <strong>Cementerio</strong>
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
               {graveyard.map((c) => (
-                <li key={c.id}>{c.name}</li>
+                <li
+                  key={c.id}
+                  style={{
+                    background: rarityColors[c.rarity],
+                    color: c.player === 'w' ? '#fff' : '#000',
+                    borderRadius: 4,
+                    padding: '2px 6px',
+                    marginBottom: 4,
+                  }}
+                >
+                  {c.name}
+                </li>
               ))}
             </ul>
           </div>

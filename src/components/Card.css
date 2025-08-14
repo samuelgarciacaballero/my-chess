@@ -5,6 +5,8 @@
   padding: 0.75rem;
   margin: 0.5rem;
   width: 150px;
+  height: 210px;
+  box-sizing: border-box;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition:
@@ -33,11 +35,16 @@
     text-shadow 0.3s ease;
 }
 .card.back {
-  background: #444;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 150px;
+  height: 210px;
+  margin: 0.5rem;
+  padding: 0.75rem;
+  background-color: rgba(97, 97, 100, 0.85);
+  border-radius: 8px;
   cursor: default;
 }
 
@@ -47,4 +54,12 @@
 .card .discard-btn:hover {
   color: #ff4d4f;
   text-shadow: 0 0 6px #ff4d4f;
+}
+
+.card .hidden-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-weight: bold;
+  font-size: 1.1rem;
 }

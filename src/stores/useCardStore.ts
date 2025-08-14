@@ -8,6 +8,7 @@ export type Card = {
   description: string;
   rarity: "normal" | "rare" | "epic" | "mythic" | "legendary";
   effectKey: string;
+  hidden?: boolean;
 };
 
 const cardPool: Card[] = [
@@ -100,7 +101,7 @@ const cardPool: Card[] = [
     name: "Artes Ocultas",
     description: "Al lanzar esta carta robas otra que no es visible para el rival",
     rarity: "mythic",
-    effectKey: "undoTurn",
+    effectKey: "hiddenDraw",
   },
   // {
   //   id: "cupido",
@@ -152,9 +153,11 @@ function buildDeck(): Card[] {
 
 }
 
+export type GraveyardEntry = Card & { player: Color };
+
 interface CardState {
   deck: Card[];
-  graveyard: Card[];
+  graveyard: GraveyardEntry[];
   hand: Card[];
   opponentHand: Card[];
   initialFaceUp: Card | null;
@@ -164,6 +167,7 @@ interface CardState {
   setInitialFaceUp: () => void;
   drawCard: () => void;
   drawOpponentCard: () => void;
+  drawHiddenCard: (player: Color) => void;
   discardCard: (id: string) => void;
   markFirstCapture: (captorColor: Color) => void;
   selectCard: (id: string) => void;
@@ -171,6 +175,7 @@ interface CardState {
   drawSpecificToHand: (id: string) => void;
   drawSpecificToOpponent: (id: string) => void;
   clearOpponentHand: () => void;
+  reset: () => void;
 }
 
 export const useCardStore = create<CardState>((set) => ({
@@ -210,17 +215,39 @@ export const useCardStore = create<CardState>((set) => ({
 
     }),
 
+  drawHiddenCard: (player) =>
+    set((state) => {
+      if (state.deck.length === 0) return {};
+      const [card, ...rest] = state.deck;
+      const hiddenCard = { ...card, hidden: true };
+      if (player === "w") {
+        if (state.hand.length >= 3) return {};
+        return { hand: [...state.hand, hiddenCard], deck: rest };
+      } else {
+        if (state.opponentHand.length >= 3) return {};
+        return { opponentHand: [...state.opponentHand, hiddenCard], deck: rest };
+      }
+    }),
+
   discardCard: (id) =>
     set((state) => {
-      const card =
-        state.hand.find((c) => c.id === id) ||
-        state.opponentHand.find((c) => c.id === id);
+      const fromHand = state.hand.find((c) => c.id === id);
+      const fromOpp = state.opponentHand.find((c) => c.id === id);
+      const card = fromHand || fromOpp;
+      const player: Color | undefined = fromHand
+        ? "w"
+        : fromOpp
+        ? "b"
+        : undefined;
       return {
         hand: state.hand.filter((c) => c.id !== id),
         opponentHand: state.opponentHand.filter((c) => c.id !== id),
         selectedCard:
           state.selectedCard?.id === id ? null : state.selectedCard,
-        graveyard: card ? [...state.graveyard, card] : state.graveyard,
+        graveyard:
+          card && player
+            ? [...state.graveyard, { ...card, player }]
+            : state.graveyard,
       };
     }),
 
@@ -280,5 +307,23 @@ export const useCardStore = create<CardState>((set) => ({
       return { opponentHand: [...state.opponentHand, card], deck };
     }),
 
-  clearOpponentHand: () => set({ opponentHand: [] }),
+  clearOpponentHand: () =>
+    set((state) => ({
+      opponentHand: [],
+      graveyard: [
+        ...state.graveyard,
+        ...state.opponentHand.map((c) => ({ ...c, player: "b" as Color })),
+      ],
+    })),
+
+  reset: () =>
+    set(() => ({
+      deck: buildDeck(),
+      graveyard: [],
+      hand: [],
+      opponentHand: [],
+      initialFaceUp: null,
+      hasFirstCapture: false,
+      selectedCard: null,
+    })),
 }));
