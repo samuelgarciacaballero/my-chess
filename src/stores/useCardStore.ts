@@ -173,6 +173,7 @@ interface CardState {
   drawSpecificToHand: (id: string) => void;
   drawSpecificToOpponent: (id: string) => void;
   clearOpponentHand: () => void;
+  reset: () => void;
 }
 
 export const useCardStore = create<CardState>((set) => ({
@@ -301,4 +302,16 @@ export const useCardStore = create<CardState>((set) => ({
       opponentHand: [],
       graveyard: [...state.graveyard, ...state.opponentHand],
     })),
+
+  reset: () =>
+    set(() => ({
+      deck: buildDeck(),
+      graveyard: [],
+      hand: [],
+      opponentHand: [],
+      initialFaceUp: null,
+      hasFirstCapture: false,
+      selectedCard: null,
+    })),
+
 }));
