@@ -1,6 +1,7 @@
 // src/stores/useCardStore.ts
 import { create } from "zustand";
 import type { Color } from "chess.js";
+import { useChessStore } from "./useChessStore";
 
 export type Card = {
   id: string;
@@ -124,16 +125,26 @@ const rarityCopies: Record<Card["rarity"], number> = {
   mythic: 1,
 };
 
-function shuffle<T>(array: T[]): T[] {
+function mulberry32(a: number) {
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function shuffle<T>(array: T[], rng: () => number = Math.random): T[] {
   const result = [...array];
   for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
 }
 
-function buildDeck(): Card[] {
+function buildDeck(seed?: number): Card[] {
   const deck: Card[] = [];
   cardPool.forEach((c) => {
     const copies = rarityCopies[c.rarity];
@@ -141,7 +152,7 @@ function buildDeck(): Card[] {
       deck.push({ ...c, id: `${c.id}-${i}` });
     }
   });
-  return shuffle(deck);
+  return shuffle(deck, seed !== undefined ? mulberry32(seed) : Math.random);
 }
 
 export type GraveyardEntry = Card & { player: Color };
@@ -166,7 +177,7 @@ interface CardState {
   drawSpecificToHand: (id: string) => void;
   drawSpecificToOpponent: (id: string) => void;
   clearOpponentHand: () => void;
-  reset: () => void;
+  reset: (seed?: number) => void;
 }
 
 export const useCardStore = create<CardState>((set) => ({
@@ -207,15 +218,13 @@ export const useCardStore = create<CardState>((set) => ({
       if (state.deck.length === 0) return {};
       const [card, ...rest] = state.deck;
       const hiddenCard = { ...card, hidden: true };
-      if (player === "w") {
+      const me = useChessStore.getState().playerColor;
+      if (!me || player === me) {
         if (state.hand.length >= 3) return {};
         return { hand: [...state.hand, hiddenCard], deck: rest };
       } else {
         if (state.opponentHand.length >= 3) return {};
-        return {
-          opponentHand: [...state.opponentHand, hiddenCard],
-          deck: rest,
-        };
+        return { opponentHand: [...state.opponentHand, hiddenCard], deck: rest };
       }
     }),
 
@@ -242,24 +251,23 @@ export const useCardStore = create<CardState>((set) => ({
 
   markFirstCapture: (captorColor) =>
     set((state) => {
-      // Asignamos la carta inicial al captor correspondiente
       const card = state.initialFaceUp;
       if (!card) {
         return { hasFirstCapture: true, initialFaceUp: null };
       }
-      if (captorColor === "w") {
+      const me = useChessStore.getState().playerColor;
+      if (!me || captorColor === me) {
         return {
           hasFirstCapture: true,
           hand: [card],
           initialFaceUp: null,
         };
-      } else {
-        return {
-          hasFirstCapture: true,
-          opponentHand: [card],
-          initialFaceUp: null,
-        };
       }
+      return {
+        hasFirstCapture: true,
+        opponentHand: [card],
+        initialFaceUp: null,
+      };
     }),
 
   selectCard: (id) =>
@@ -305,9 +313,9 @@ export const useCardStore = create<CardState>((set) => ({
       ],
     })),
 
-  reset: () =>
+  reset: (seed?: number) =>
     set(() => ({
-      deck: buildDeck(),
+      deck: buildDeck(seed),
       graveyard: [],
       hand: [],
       opponentHand: [],
