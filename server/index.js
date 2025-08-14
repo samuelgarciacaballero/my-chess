@@ -39,13 +39,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('block', ({ square, type, player }) => {
-    const room = socket.data.room;
-    if (room) {
-      socket.to(room).emit('block', { square, type, player });
-    }
-  });
-
 
   socket.on('card', (payload) => {
     const room = socket.data.room;
