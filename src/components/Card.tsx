@@ -112,13 +112,6 @@ const CardView: React.FC<CardProps> = ({
       const ok = await confirm('¿Usar "Tratado de paz"?');
       if (ok) {
         useChessStore.getState().activatePeaceTreaty(card.id, player);
-      }
-      return;
-    }
-    if (card.effectKey === 'undoTurn') {
-      const ok = await confirm('¿Usar "DEJAVÚ"?');
-      if (ok) {
-        useChessStore.getState().useDejavu(card.id, player);
 
       }
       return;
