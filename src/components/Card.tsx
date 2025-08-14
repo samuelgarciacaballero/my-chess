@@ -16,6 +16,7 @@ interface CardProps {
   player: 'w' | 'b';
   faceDown?: boolean;
   fullView?: boolean;
+
 }
 
 const CardView: React.FC<CardProps> = ({
@@ -28,6 +29,7 @@ const CardView: React.FC<CardProps> = ({
   player,
   faceDown,
   fullView,
+
 }) => {
   const discardCard = useCardStore((state) => state.discardCard);
   const drawHiddenCard = useCardStore((s) => s.drawHiddenCard);
@@ -65,6 +67,7 @@ const CardView: React.FC<CardProps> = ({
       if (window.confirm('¿Consumir "Artes Ocultas"?')) {
         discardCard(card.id);
         drawHiddenCard(player);
+
       }
       return;
     }
