@@ -551,6 +551,11 @@ export const useChessStore = create<ChessState>((set, get) => {
           turn: nt,
           lastMove: { from, to },
         });
+        const sock = get().socket;
+        const pc = get().playerColor;
+        if (!remote && sock && pc === movedColor) {
+          sock.emit("move", { from, to, effectKey });
+        }
         get().checkGameEnd();
         return true;
       }

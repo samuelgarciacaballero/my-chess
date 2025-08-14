@@ -41,7 +41,6 @@ const OnlineGame: React.FC = () => {
       }
     };
 
-
     socket.on('waiting', onWaiting);
     socket.on('start', onStart);
     socket.on('move', onMove);
