@@ -23,8 +23,10 @@ io.on('connection', (socket) => {
       const assignWhite = Math.random() < 0.5;
       const white = assignWhite ? s1 : s2;
       const black = assignWhite ? s2 : s1;
-      white.emit('start', { color: 'w', opponent: black.data.name });
-      black.emit('start', { color: 'b', opponent: white.data.name });
+      const seed = Math.floor(Math.random() * 1e9);
+      white.emit('start', { color: 'w', seed });
+      black.emit('start', { color: 'b', seed });
+
     } else {
       socket.emit('full');
     }
@@ -36,6 +38,14 @@ io.on('connection', (socket) => {
       socket.to(room).emit('move', { from, to, effectKey });
     }
   });
+
+  socket.on('card', (payload) => {
+    const room = socket.data.room;
+    if (room) {
+      socket.to(room).emit('card', payload);
+    }
+  });
+
 });
 
 const PORT = process.env.PORT || 3001;

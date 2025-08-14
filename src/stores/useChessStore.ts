@@ -182,6 +182,8 @@ export const useChessStore = create<ChessState>((set, get) => {
       try {
         const cardStore = useCardStore.getState();
         const currentTurn = get().turn;
+        const playerColor = get().playerColor;
+        if (!remote && playerColor && playerColor !== currentTurn) return false;
         const piece = game.get(from as Square);
         if (!piece || piece.color !== currentTurn) return false;
 
@@ -573,15 +575,16 @@ export const useChessStore = create<ChessState>((set, get) => {
       set(update);
 
       // --- 11) Robar carta si no fue bloqueo ---
+      const me = get().playerColor;
       if (!effectUsed) {
-        if (movedColor === "w") cardStore.drawCard();
+        if (!me || movedColor === me) cardStore.drawCard();
         else cardStore.drawOpponentCard();
       }
 
       // --- 12) Descartar carta usada ---
       if (effectUsed && effectKey && effectKey !== "noCaptureNextTurn") {
         const activeHand =
-          movedColor === "w" ? cardStore.hand : cardStore.opponentHand;
+          !me || movedColor === me ? cardStore.hand : cardStore.opponentHand;
         const used = activeHand.find((c) => c.effectKey === effectKey);
         if (used) {
           cardStore.discardCard(used.id);

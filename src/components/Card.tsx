@@ -6,6 +6,7 @@ import { rarityColors } from '../styles/cardColors';
 import './Card.css';
 import cardBack from '../assets/card-back.jpeg';
 import { useConfirmStore } from '../stores/useConfirmStore';
+import { useChessStore } from '../stores/useChessStore';
 
 
 interface CardProps {
@@ -35,6 +36,7 @@ const CardView: React.FC<CardProps> = ({
   const discardCard = useCardStore((state) => state.discardCard);
   const drawHiddenCard = useCardStore((s) => s.drawHiddenCard);
   const confirm = useConfirmStore((s) => s.show);
+  const socket = useChessStore((s) => s.socket);
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
   const timer = useRef<number | null>(null);
 
@@ -44,6 +46,7 @@ const CardView: React.FC<CardProps> = ({
     const ok = await confirm(`¿Descartar "${card.name}"?`);
     if (ok) {
       discardCard(card.id);
+      socket?.emit('card', { action: 'discard', id: card.id });
     }
   };
 
@@ -101,7 +104,7 @@ const CardView: React.FC<CardProps> = ({
       if (ok) {
         discardCard(card.id);
         drawHiddenCard(player);
-
+        socket?.emit('card', { action: 'hiddenDraw', player, id: card.id });
       }
       return;
     }

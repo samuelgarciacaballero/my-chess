@@ -18,25 +18,42 @@ const OnlineGame: React.FC = () => {
     if (!socket) return;
 
     const onWaiting = () => setPhase('waiting');
-    const onStart = ({ color: c }: { color: Color }) => {
+    const onStart = ({ color: c, seed }: { color: Color; seed: number }) => {
       setColor(c);
       useChessStore.getState().reset();
-      useCardStore.getState().reset();
+      const cardState = useCardStore.getState();
+      cardState.reset(seed);
+      cardState.setInitialFaceUp();
+
       useChessStore.getState().setOnline(socket, c);
       setPhase('playing');
     };
     const onMove = ({ from, to, effectKey }: { from: Square; to: Square; effectKey?: string }) => {
       useChessStore.getState().move(from, to, effectKey, true);
     };
+    const onCard = (data: { action: string; player: Color; id?: string }) => {
+      const cs = useCardStore.getState();
+      if (data.action === 'hiddenDraw') {
+        if (data.id) cs.discardCard(data.id);
+        cs.drawHiddenCard(data.player);
+      } else if (data.action === 'discard' && data.id) {
+        cs.discardCard(data.id);
+      }
+    };
+
 
     socket.on('waiting', onWaiting);
     socket.on('start', onStart);
     socket.on('move', onMove);
+    socket.on('card', onCard);
+
 
     return () => {
       socket.off('waiting', onWaiting);
       socket.off('start', onStart);
       socket.off('move', onMove);
+      socket.off('card', onCard);
+
     };
   }, [socket]);
 
