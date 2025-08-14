@@ -1,6 +1,7 @@
 // src/components/Hand.tsx
 import React from 'react';
 import { useCardStore } from '../stores/useCardStore';
+import { useChessStore } from '../stores/useChessStore';
 import CardView from './Card';
 import './Hand.css';
 
@@ -11,9 +12,11 @@ interface HandProps {
 }
 
 const Hand: React.FC<HandProps> = ({ player, position, readOnly }) => {
-  const hand = useCardStore((s) =>
-    player === 'w' ? s.hand : s.opponentHand
-  );
+  const myColor = useChessStore((s) => s.playerColor);
+  const hand = useCardStore((s) => {
+    const isMe = myColor ? player === myColor : player === 'w';
+    return isMe ? s.hand : s.opponentHand;
+  });
   const selectedCard = useCardStore((s) => s.selectedCard);
   const selectCard = useCardStore((s) => s.selectCard);
   // No se roba automáticamente al descartar

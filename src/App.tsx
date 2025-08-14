@@ -17,11 +17,17 @@ import VictoryPanel from "./components/VictoryPanel";
 import ConfirmModal from "./components/ConfirmModal";
 
 import "./App.css";
+import type { Color } from "chess.js";
+
 // import { WHITE } from "chess.js";
 
 // import type { Card } from "./stores/useCardStore";
 
-const App: React.FC = () => {
+interface AppProps {
+  playerColor?: Color;
+}
+
+const App: React.FC<AppProps> = ({ playerColor }) => {
   const initialFaceUp = useCardStore((s) => s.initialFaceUp);
   const setInitialFaceUp = useCardStore((s) => s.setInitialFaceUp);
   const turn = useChessStore((s) => s.turn);
@@ -69,7 +75,15 @@ const App: React.FC = () => {
 
       {!fullView && (
         <Hand
-          player={localMultiplayer ? (turn === "w" ? "b" : "w") : "b"}
+          player={
+            playerColor
+              ? playerColor === "w"
+                ? "b"
+                : "w"
+              : localMultiplayer
+              ? (turn === "w" ? "b" : "w")
+              : "b"
+          }
           position="top"
           readOnly
         />
@@ -84,18 +98,32 @@ const App: React.FC = () => {
         {fullView && (
           <div className={`hand-panel ${leftHanded ? 'right' : 'left'}`}>
             <Hand
-              player={localMultiplayer ? (turn === "w" ? "b" : "w") : "b"}
+              player={
+                playerColor
+                  ? playerColor === "w"
+                    ? "b"
+                    : "w"
+                  : localMultiplayer
+                  ? (turn === "w" ? "b" : "w")
+                  : "b"
+              }
               position="full-top"
               readOnly
             />
             {initialFaceUp && <FaceUpCard card={initialFaceUp} small />}
             <Hand
-              player={localMultiplayer ? turn : "w"}
+              player={
+                playerColor
+                  ? playerColor
+                  : localMultiplayer
+                  ? turn
+                  : "w"
+              }
               position="full-bottom"
             />
           </div>
         )}
-        <Board rotated={localMultiplayer && turn === "b"} />
+        <Board rotated={playerColor === "b" || (localMultiplayer && turn === "b")} />
         <div className={`side-piles ${leftHanded ? 'left' : 'right'}`}>
           <DeckPile />
           <Graveyard />
@@ -105,7 +133,13 @@ const App: React.FC = () => {
       <VictoryPanel />
       {!fullView && (
         <Hand
-          player={localMultiplayer ? turn : "w"}
+          player={
+            playerColor
+              ? playerColor
+              : localMultiplayer
+              ? turn
+              : "w"
+          }
           position="bottom"
         />
       )}

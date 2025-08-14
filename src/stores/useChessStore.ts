@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { Chess } from "chess.js";
 import type { Piece, Color, Square, Move, PieceSymbol } from "chess.js";
+import type { Socket } from "socket.io-client";
 import { useCardStore } from "./useCardStore";
 import { useConfirmStore } from "./useConfirmStore";
 
@@ -110,9 +111,19 @@ interface ChessState {
   promotionRequest: PromotionRequest | null;
   /** Selecciona pieza de promoción tras petición */
   selectPromotion: (pieceType: PieceSymbol) => void;
+  socket: Socket | null;
+  playerColor: Color | null;
+  setOnline: (socket: Socket | null, color: Color | null) => void;
 
-  move: (from: Square, to: Square, effectKey?: string) => Promise<boolean>;
+  move: (
+    from: Square,
+    to: Square,
+    effectKey?: string,
+    remote?: boolean,
+  ) => Promise<boolean>;
   blockSquareAt: (sq: Square) => void;
+  applyBlock: (sq: Square, by: Color, type: 'normal' | 'rare') => void;
+  activatePeaceTreaty: (id: string, player: Color, remote?: boolean) => void;
   reset: () => void;
 }
 
@@ -134,6 +145,9 @@ export const useChessStore = create<ChessState>((set, get) => {
     notification: null,
     clearNotification: () => set({ notification: null }),
     winner: null,
+    socket: null,
+    playerColor: null,
+    setOnline: (socket, color) => set({ socket, playerColor: color }),
     checkGameEnd: () => {
       const g = get().game;
       if (g.isCheckmate()) {
@@ -166,10 +180,12 @@ export const useChessStore = create<ChessState>((set, get) => {
       // NOTA: aquí podrías añadir lógica extra como robo de carta, descartes, etc.
     },
 
-    move: async (from, to, effectKey) => {
+    move: async (from, to, effectKey, remote = false) => {
       try {
         const cardStore = useCardStore.getState();
         const currentTurn = get().turn;
+        const playerColor = get().playerColor;
+        if (!remote && playerColor && playerColor !== currentTurn) return false;
         const piece = game.get(from as Square);
         if (!piece || piece.color !== currentTurn) return false;
 
@@ -278,7 +294,7 @@ export const useChessStore = create<ChessState>((set, get) => {
           lastMove: { from, to },
           winner: hiddenKill ? moving.color : null,
         });
-        if (used && effectKey && effectKey !== "noCaptureNextTurn") {
+        if (used && effectKey) {
           cardStore.discardCard(used.id);
           cardStore.selectCard("");
 
@@ -308,38 +324,18 @@ export const useChessStore = create<ChessState>((set, get) => {
             turn: currentTurn,
             lastMove: { from, to: home },
           });
+          const sock = get().socket;
+          const pc = get().playerColor;
+          if (!remote && sock && pc === piece.color) {
+            sock.emit('move', { from, to: home, effectKey });
+          }
           get().checkGameEnd();
           return true;
         }
         return false;
       }
 
-      // --- 6) Efecto noCaptureNextTurn ---
-      if (effectKey === "noCaptureNextTurn") {
-        const legal = game.moves({ verbose: true }) as Move[];
-        if (!legal.some((m) => m.from === from && m.to === to)) return false;
-        const m = game.move({ from, to });
-        if (!m) return false;
-        const movedColor = m.color;
-        const activeHand =
-          currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
-        const sel = activeHand.find((c) => c.effectKey === "noCaptureNextTurn");
-        if (sel) {
-          cardStore.discardCard(sel.id);
-          cardStore.selectCard("");
-        }
-        const opponent = movedColor === "w" ? "b" : "w";
-        set({
-          board: game.board() as SquarePiece[][],
-          turn: opponent,
-          lastMove: { from, to },
-          skipCaptureFor: opponent,
-        });
-        get().checkGameEnd();
-        return true;
-      }
-
-      // --- 7) Movimientos legales y otros efectos manuales ---
+      // --- 6) Movimientos legales y otros efectos manuales ---
       const legalMoves = game.moves({ verbose: true }) as Move[];
       let allowed = legalMoves.some((m) => m.from === from && m.to === to);
       let manual = false;
@@ -537,6 +533,11 @@ export const useChessStore = create<ChessState>((set, get) => {
           turn: nt,
           lastMove: { from, to },
         });
+        const sock = get().socket;
+        const pc = get().playerColor;
+        if (!remote && sock && pc === movedColor) {
+          sock.emit("move", { from, to, effectKey });
+        }
         get().checkGameEnd();
         return true;
       }
@@ -561,15 +562,16 @@ export const useChessStore = create<ChessState>((set, get) => {
       set(update);
 
       // --- 11) Robar carta si no fue bloqueo ---
+      const me = get().playerColor;
       if (!effectUsed) {
-        if (movedColor === "w") cardStore.drawCard();
+        if (!me || movedColor === me) cardStore.drawCard();
         else cardStore.drawOpponentCard();
       }
 
       // --- 12) Descartar carta usada ---
-      if (effectUsed && effectKey && effectKey !== "noCaptureNextTurn") {
+      if (effectUsed && effectKey) {
         const activeHand =
-          movedColor === "w" ? cardStore.hand : cardStore.opponentHand;
+          !me || movedColor === me ? cardStore.hand : cardStore.opponentHand;
         const used = activeHand.find((c) => c.effectKey === effectKey);
         if (used) {
           cardStore.discardCard(used.id);
@@ -578,7 +580,11 @@ export const useChessStore = create<ChessState>((set, get) => {
       }
 
       get().checkGameEnd();
-
+      const sock = get().socket;
+      const pc = get().playerColor;
+      if (!remote && sock && pc === movedColor) {
+        sock.emit('move', { from, to, effectKey });
+      }
 
       return true;
     } catch (e) {
@@ -596,25 +602,50 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (!sel) return;
 
       const isRare = sel.effectKey === "blockSquareRare";
-      // const next = st.turn === "w" ? "b" : "w";
-
-      // // reconstruimos FEN con el turno alternado
-      // const f = st.game.fen().split(" ");
-      // f[1] = next;
-      // st.game.load(f.join(" ")); // ← aquí estaba el bug: usar join(" ") no join("")
 
       set({
         blockedSquare: sq,
         blockedBy: st.turn,
         blockedType: isRare ? "rare" : "normal",
-        // turn: next,
         board: st.game.board() as SquarePiece[][],
         skipCaptureFor: st.skipCaptureFor,
       });
 
       cs.discardCard(sel.id);
       cs.selectCard("");
+
+      const sock = st.socket;
+      if (sock && st.playerColor === st.turn) {
+        sock.emit('block', { square: sq, type: isRare ? 'rare' : 'normal', player: st.turn });
+        sock.emit('card', { action: 'discard', id: sel.id });
+      }
+
       get().checkGameEnd();
+    },
+
+    applyBlock: (sq: Square, by: Color, type: 'normal' | 'rare') => {
+      const st = get();
+      set({
+        blockedSquare: sq,
+        blockedBy: by,
+        blockedType: type,
+        board: st.game.board() as SquarePiece[][],
+      });
+    },
+
+    activatePeaceTreaty: (id: string, player: Color, remote = false) => {
+      const cs = useCardStore.getState();
+      cs.discardCard(id);
+      cs.selectCard("");
+      const skipFor: Color = player === 'w' ? 'b' : 'w';
+      set({ skipCaptureFor: skipFor });
+      if (!remote) {
+        const sock = get().socket;
+        const pc = get().playerColor;
+        if (sock && pc === player) {
+          sock.emit('card', { action: 'peace', player, id });
+        }
+      }
     },
 
     reset: () => {
