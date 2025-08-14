@@ -21,7 +21,7 @@ const Board: React.FC<BoardProps> = ({ rotated }) => {
       <div className={`board${rotated ? ' rotated' : ''}`}>
         {rows.map((row) =>
           rows.map((col) => (
-            <Square key={`${row}-${col}`} row={row} col={col}>
+            <Square key={`${row}-${col}`} row={row} col={col} rotated={rotated}>
               <Piece row={row} col={col} />
             </Square>
           ))
