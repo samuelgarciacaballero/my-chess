@@ -13,6 +13,7 @@ import { useChessStore } from "./stores/useChessStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
 import PromotionModal from "./components/PromotionModal";
 import CustomDragLayer from "./components/CustomDragLayer";
+import VictoryPanel from "./components/VictoryPanel";
 import "./App.css";
 // import { WHITE } from "chess.js";
 
@@ -98,6 +99,7 @@ const App: React.FC = () => {
         </div>
       </div>
       <PromotionModal />
+      <VictoryPanel />
       {!fullView && (
         <Hand
           player={localMultiplayer ? turn : "w"}

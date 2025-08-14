@@ -4,6 +4,7 @@ import type { Card } from '../stores/useCardStore';
 import { useCardStore } from '../stores/useCardStore';
 import { rarityColors } from '../styles/cardColors';
 import './Card.css';
+import cardBack from '../assets/card-back.jpeg';
 
 interface CardProps {
   card: Card;
@@ -12,6 +13,10 @@ interface CardProps {
   readOnly?: boolean;
   showRarity?: boolean;
   showDescription?: boolean;
+  player: 'w' | 'b';
+  faceDown?: boolean;
+  fullView?: boolean;
+
 }
 
 const CardView: React.FC<CardProps> = ({
@@ -21,8 +26,13 @@ const CardView: React.FC<CardProps> = ({
   readOnly,
   showRarity = true,
   showDescription = true,
+  player,
+  faceDown,
+  fullView,
+
 }) => {
   const discardCard = useCardStore((state) => state.discardCard);
+  const drawHiddenCard = useCardStore((s) => s.drawHiddenCard);
 
   const handleDiscard = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -32,15 +42,45 @@ const CardView: React.FC<CardProps> = ({
   };
 
   // Background color según rareza
+  if (faceDown) {
+    return (
+      <div className="card back">
+        {fullView ? (
+          <span style={{ fontSize: '2rem' }}>¿?</span>
+        ) : (
+          <img
+            src={cardBack}
+            alt="Carta oculta"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        )}
+      </div>
+    );
+  }
+
   const bgColor = rarityColors[card.rarity];
   const cls = `card${isSelected ? ' selected' : ''}`;
 
+  const handleSelect = () => {
+    if (readOnly) return;
+    if (card.effectKey === 'hiddenDraw') {
+      if (window.confirm('¿Consumir "Artes Ocultas"?')) {
+        discardCard(card.id);
+        drawHiddenCard(player);
+
+      }
+      return;
+    }
+    onSelect?.(card.id);
+  };
+
   return (
     <div
-      onClick={() => onSelect?.(card.id)}
+      onClick={handleSelect}
       className={cls}
       style={{ backgroundColor: bgColor }}
     >
+      {card.hidden && <span className="hidden-indicator">¿?</span>}
       {!readOnly && (
         <button onClick={handleDiscard} className="discard-btn">
           ×
