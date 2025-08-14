@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { Chess } from "chess.js";
 import type { Piece, Color, Square, Move, PieceSymbol } from "chess.js";
+import type { Socket } from "socket.io-client";
 import { useCardStore } from "./useCardStore";
 import { useConfirmStore } from "./useConfirmStore";
 
@@ -110,8 +111,16 @@ interface ChessState {
   promotionRequest: PromotionRequest | null;
   /** Selecciona pieza de promoción tras petición */
   selectPromotion: (pieceType: PieceSymbol) => void;
+  socket: Socket | null;
+  playerColor: Color | null;
+  setOnline: (socket: Socket | null, color: Color | null) => void;
 
-  move: (from: Square, to: Square, effectKey?: string) => Promise<boolean>;
+  move: (
+    from: Square,
+    to: Square,
+    effectKey?: string,
+    remote?: boolean,
+  ) => Promise<boolean>;
   blockSquareAt: (sq: Square) => void;
   reset: () => void;
 }
@@ -134,6 +143,9 @@ export const useChessStore = create<ChessState>((set, get) => {
     notification: null,
     clearNotification: () => set({ notification: null }),
     winner: null,
+    socket: null,
+    playerColor: null,
+    setOnline: (socket, color) => set({ socket, playerColor: color }),
     checkGameEnd: () => {
       const g = get().game;
       if (g.isCheckmate()) {
@@ -166,7 +178,7 @@ export const useChessStore = create<ChessState>((set, get) => {
       // NOTA: aquí podrías añadir lógica extra como robo de carta, descartes, etc.
     },
 
-    move: async (from, to, effectKey) => {
+    move: async (from, to, effectKey, remote = false) => {
       try {
         const cardStore = useCardStore.getState();
         const currentTurn = get().turn;
@@ -578,7 +590,11 @@ export const useChessStore = create<ChessState>((set, get) => {
       }
 
       get().checkGameEnd();
-
+      const sock = get().socket;
+      const pc = get().playerColor;
+      if (!remote && sock && pc === movedColor) {
+        sock.emit('move', { from, to, effectKey });
+      }
 
       return true;
     } catch (e) {
