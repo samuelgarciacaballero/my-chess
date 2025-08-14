@@ -67,6 +67,8 @@ const Graveyard: React.FC = () => {
                   }}
                 >
                   {c.name}
+                  {c.hidden ? ' ¿?' : ''}
+
                 </li>
               ))}
             </ul>

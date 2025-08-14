@@ -123,30 +123,30 @@ const CardView: React.FC<CardProps> = ({
         </button>
       )}
 
-      <h4 style={{ margin: '0 0 0.25rem' }}>{card.name}</h4>
-      {showDescription && (
-        <p style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>
-          {card.description}
-        </p>
-      )}
-      {showRarity && <small>Rarity: {card.rarity}</small>}
+      <h4 className="card-title">{card.name}</h4>
+      {showDescription && <p className="card-desc">{card.description}</p>}
+      {showRarity && <small className="card-rarity">{card.rarity}</small>}
+
       {fullView && tooltip && (
         <div
           style={{
             position: 'fixed',
-            top: tooltip.y + 10,
-            left: tooltip.x + 10,
-            border: '2px dashed #f00',
+            top: tooltip.y + 8,
+            left: tooltip.x + 8,
+
             backgroundColor: rarityColors[card.rarity],
             opacity: 0.85,
             padding: '0.5rem',
             borderRadius: 8,
-            zIndex: 1000,
+            zIndex: 10000,
+            maxWidth: 200,
+
             pointerEvents: 'none',
           }}
         >
           <p style={{ margin: 0 }}>{card.description}</p>
-          <small>Rarity: {card.rarity}</small>
+          <small style={{ display: 'block', marginTop: 4 }}>{card.rarity}</small>
+
         </div>
       )}
     </div>
