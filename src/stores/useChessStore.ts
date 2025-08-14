@@ -38,9 +38,10 @@ function isSquareThreatenedByCard(
   const cardStore = useCardStore.getState();
   const oppCards =
     oppColor === "w" ? cardStore.hand : cardStore.opponentHand;
+  const visibleCards = oppCards.filter((c) => !c.hidden);
   const board = game.board() as SquarePiece[][];
 
-  if (oppCards.some((c) => c.effectKey === "queenKnightMove")) {
+  if (visibleCards.some((c) => c.effectKey === "queenKnightMove")) {
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const piece = board[r][c];
@@ -59,7 +60,7 @@ function isSquareThreatenedByCard(
     }
   }
 
-  if (oppCards.some((c) => c.effectKey === "pawnBackwardCapture")) {
+  if (visibleCards.some((c) => c.effectKey === "pawnBackwardCapture")) {
     const dir = oppColor === "w" ? -1 : 1;
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
@@ -242,6 +243,13 @@ export const useChessStore = create<ChessState>((set, get) => {
       if (targetPiece?.type === "k") {
         const moving = game.get(from as Square);
         if (!moving) return false;
+        const activeHand =
+          moving.color === "w" ? cardStore.hand : cardStore.opponentHand;
+        const used = effectKey
+          ? activeHand.find((c) => c.effectKey === effectKey)
+          : undefined;
+        const hiddenKill = used?.hidden;
+
         game.remove(to as Square);
         game.remove(from as Square);
         game.put(moving, to as Square);
@@ -250,16 +258,12 @@ export const useChessStore = create<ChessState>((set, get) => {
           board: game.board() as SquarePiece[][],
           turn: nextTurn,
           lastMove: { from, to },
-          winner: moving.color,
+          winner: hiddenKill ? moving.color : null,
         });
-        if (effectKey && effectKey !== "noCaptureNextTurn") {
-          const activeHand =
-            moving.color === "w" ? cardStore.hand : cardStore.opponentHand;
-          const used = activeHand.find((c) => c.effectKey === effectKey);
-          if (used) {
-            cardStore.discardCard(used.id);
-            cardStore.selectCard("");
-          }
+        if (used && effectKey && effectKey !== "noCaptureNextTurn") {
+          cardStore.discardCard(used.id);
+          cardStore.selectCard("");
+
         }
         return true;
       }
@@ -552,10 +556,13 @@ export const useChessStore = create<ChessState>((set, get) => {
         }
       }
 
-      if (game.isCheckmate()) {
-        set({ winner: movedColor });
-      } else if (game.isDraw()) {
-        set({ winner: "draw" });
+      if (!get().winner) {
+        if (game.isCheckmate()) {
+          set({ winner: movedColor });
+        } else if (game.isDraw()) {
+          set({ winner: "draw" });
+        }
+
       }
 
       return true;

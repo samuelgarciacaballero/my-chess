@@ -65,8 +65,9 @@ const CardView: React.FC<CardProps> = ({
     if (readOnly) return;
     if (card.effectKey === 'hiddenDraw') {
       if (window.confirm('¿Consumir "Artes Ocultas"?')) {
-        drawHiddenCard(player);
         discardCard(card.id);
+        drawHiddenCard(player);
+
       }
       return;
     }
@@ -79,6 +80,7 @@ const CardView: React.FC<CardProps> = ({
       className={cls}
       style={{ backgroundColor: bgColor }}
     >
+      {card.hidden && <span className="hidden-indicator">¿?</span>}
       {!readOnly && (
         <button onClick={handleDiscard} className="discard-btn">
           ×
