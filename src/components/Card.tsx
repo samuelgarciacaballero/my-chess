@@ -1,10 +1,12 @@
 // src/components/Card.tsx
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import type { Card } from '../stores/useCardStore';
 import { useCardStore } from '../stores/useCardStore';
 import { rarityColors } from '../styles/cardColors';
 import './Card.css';
 import cardBack from '../assets/card-back.jpeg';
+import { useConfirmStore } from '../stores/useConfirmStore';
+
 
 interface CardProps {
   card: Card;
@@ -29,42 +31,72 @@ const CardView: React.FC<CardProps> = ({
   player,
   faceDown,
   fullView,
-
 }) => {
   const discardCard = useCardStore((state) => state.discardCard);
   const drawHiddenCard = useCardStore((s) => s.drawHiddenCard);
+  const confirm = useConfirmStore((s) => s.show);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
+  const timer = useRef<number>();
 
-  const handleDiscard = (e: React.MouseEvent) => {
+
+  const handleDiscard = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(`¿Descartar "${card.name}"?`)) {
+    const ok = await confirm(`¿Descartar "${card.name}"?`);
+    if (ok) {
       discardCard(card.id);
     }
   };
 
   // Background color según rareza
   if (faceDown) {
-    return (
-      <div className="card back">
-        {fullView ? (
+    if (fullView) {
+      return (
+        <div className="card back">
           <span style={{ fontSize: '2rem' }}>¿?</span>
-        ) : (
-          <img
-            src={cardBack}
-            alt="Carta oculta"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        )}
-      </div>
+        </div>
+      );
+    }
+    return (
+      <img
+        src={cardBack}
+        alt="Carta oculta"
+        style={{
+          width: 150,
+          height: 210,
+          borderRadius: 8,
+          margin: '0.5rem',
+        }}
+      />
+
     );
   }
 
   const bgColor = rarityColors[card.rarity];
   const cls = `card${isSelected ? ' selected' : ''}`;
 
-  const handleSelect = () => {
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    if (!fullView) return;
+    timer.current = window.setTimeout(() => {
+      setTooltip({ x: e.clientX, y: e.clientY });
+    }, 750);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (tooltip) {
+      setTooltip({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    window.clearTimeout(timer.current);
+    setTooltip(null);
+  };
+
+  const handleSelect = async () => {
     if (readOnly) return;
     if (card.effectKey === 'hiddenDraw') {
-      if (window.confirm('¿Consumir "Artes Ocultas"?')) {
+      const ok = await confirm('¿Consumir "Artes Ocultas"?');
+      if (ok) {
         discardCard(card.id);
         drawHiddenCard(player);
 
@@ -77,6 +109,10 @@ const CardView: React.FC<CardProps> = ({
   return (
     <div
       onClick={handleSelect}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onMouseMove={handleMouseMove}
+
       className={cls}
       style={{ backgroundColor: bgColor }}
     >
@@ -94,6 +130,25 @@ const CardView: React.FC<CardProps> = ({
         </p>
       )}
       {showRarity && <small>Rarity: {card.rarity}</small>}
+      {fullView && tooltip && (
+        <div
+          style={{
+            position: 'fixed',
+            top: tooltip.y + 10,
+            left: tooltip.x + 10,
+            border: '2px dashed #f00',
+            backgroundColor: rarityColors[card.rarity],
+            opacity: 0.85,
+            padding: '0.5rem',
+            borderRadius: 8,
+            zIndex: 1000,
+            pointerEvents: 'none',
+          }}
+        >
+          <p style={{ margin: 0 }}>{card.description}</p>
+          <small>Rarity: {card.rarity}</small>
+        </div>
+      )}
     </div>
   );
 };

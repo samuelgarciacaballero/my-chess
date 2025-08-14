@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { Chess } from "chess.js";
 import type { Piece, Color, Square, Move, PieceSymbol } from "chess.js";
 import { useCardStore } from "./useCardStore";
+import { useConfirmStore } from "./useConfirmStore";
 
 export interface LastMove {
   from: Square | null;
@@ -110,7 +111,7 @@ interface ChessState {
   /** Selecciona pieza de promoción tras petición */
   selectPromotion: (pieceType: PieceSymbol) => void;
 
-  move: (from: Square, to: Square, effectKey?: string) => boolean;
+  move: (from: Square, to: Square, effectKey?: string) => Promise<boolean>;
   blockSquareAt: (sq: Square) => void;
   reset: () => void;
 }
@@ -165,7 +166,7 @@ export const useChessStore = create<ChessState>((set, get) => {
       // NOTA: aquí podrías añadir lógica extra como robo de carta, descartes, etc.
     },
 
-    move: (from, to, effectKey) => {
+    move: async (from, to, effectKey) => {
       try {
         const cardStore = useCardStore.getState();
         const currentTurn = get().turn;
@@ -201,9 +202,11 @@ export const useChessStore = create<ChessState>((set, get) => {
           currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
         const sel = activeHand.find((c) => c.effectKey === "undoTurn");
         if (!sel) return false;
-        if (
-          window.confirm("¿Deseas usar DEJAVÚ para deshacer tu último turno?")
-        ) {
+        const confirm = useConfirmStore.getState().show;
+        const ok = await confirm(
+          "¿Deseas usar DEJAVÚ para deshacer tu último turno?",
+        );
+        if (ok) {
           game.undo(); // deshacer medio-turno (oponente)
           game.undo(); // deshacer tu turno
           // descartar carta

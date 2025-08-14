@@ -82,6 +82,10 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
       <button onClick={toggleLeftHanded}>
         {leftHanded ? 'Modo diestros' : 'Modo zurdos'}
       </button>
+      <button onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}>
+        {theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro'}
+      </button>
+
       <div className="add-card">
         <span>Añadir carta</span>
         <select
