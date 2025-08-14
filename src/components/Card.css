@@ -48,3 +48,11 @@
   color: #ff4d4f;
   text-shadow: 0 0 6px #ff4d4f;
 }
+
+.card .hidden-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
