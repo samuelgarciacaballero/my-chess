@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { Chess } from "chess.js";
 import type { Piece, Color, Square, Move, PieceSymbol } from "chess.js";
 import { useCardStore } from "./useCardStore";
+import { useConfirmStore } from "./useConfirmStore";
 
 export interface LastMove {
   from: Square | null;
@@ -38,9 +39,10 @@ function isSquareThreatenedByCard(
   const cardStore = useCardStore.getState();
   const oppCards =
     oppColor === "w" ? cardStore.hand : cardStore.opponentHand;
+  const visibleCards = oppCards.filter((c) => !c.hidden);
   const board = game.board() as SquarePiece[][];
 
-  if (oppCards.some((c) => c.effectKey === "queenKnightMove")) {
+  if (visibleCards.some((c) => c.effectKey === "queenKnightMove")) {
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const piece = board[r][c];
@@ -59,7 +61,7 @@ function isSquareThreatenedByCard(
     }
   }
 
-  if (oppCards.some((c) => c.effectKey === "pawnBackwardCapture")) {
+  if (visibleCards.some((c) => c.effectKey === "pawnBackwardCapture")) {
     const dir = oppColor === "w" ? -1 : 1;
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
@@ -98,12 +100,17 @@ interface ChessState {
   /** Limpia el mensaje de aviso */
   clearNotification: () => void;
 
+  /** Resultado final de la partida */
+  winner: Color | 'draw' | null;
+  /** Comprueba si la partida ha terminado */
+  checkGameEnd: () => void;
+
   /** Petición de promoción pendiente, o null si no hay */
   promotionRequest: PromotionRequest | null;
   /** Selecciona pieza de promoción tras petición */
   selectPromotion: (pieceType: PieceSymbol) => void;
 
-  move: (from: Square, to: Square, effectKey?: string) => boolean;
+  move: (from: Square, to: Square, effectKey?: string) => Promise<boolean>;
   blockSquareAt: (sq: Square) => void;
   reset: () => void;
 }
@@ -125,6 +132,16 @@ export const useChessStore = create<ChessState>((set, get) => {
     skipCaptureFor: null,
     notification: null,
     clearNotification: () => set({ notification: null }),
+    winner: null,
+    checkGameEnd: () => {
+      const g = get().game;
+      if (g.isCheckmate()) {
+        const winner = g.turn() === 'w' ? 'b' : 'w';
+        set({ winner });
+      } else if (g.isDraw()) {
+        set({ winner: 'draw' });
+      }
+    },
 
     // --- PROMOCIÓN ---
     promotionRequest: null,
@@ -143,10 +160,11 @@ export const useChessStore = create<ChessState>((set, get) => {
         lastMove: { from, to },
         promotionRequest: null,
       });
+      get().checkGameEnd();
       // NOTA: aquí podrías añadir lógica extra como robo de carta, descartes, etc.
     },
 
-    move: (from, to, effectKey) => {
+    move: async (from, to, effectKey) => {
       try {
         const cardStore = useCardStore.getState();
         const currentTurn = get().turn;
@@ -182,9 +200,11 @@ export const useChessStore = create<ChessState>((set, get) => {
           currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
         const sel = activeHand.find((c) => c.effectKey === "undoTurn");
         if (!sel) return false;
-        if (
-          window.confirm("¿Deseas usar DEJAVÚ para deshacer tu último turno?")
-        ) {
+        const confirm = useConfirmStore.getState().show;
+        const ok = await confirm(
+          "¿Deseas usar DEJAVÚ para deshacer tu último turno?",
+        );
+        if (ok) {
           game.undo(); // deshacer medio-turno (oponente)
           game.undo(); // deshacer tu turno
           // descartar carta
@@ -200,6 +220,7 @@ export const useChessStore = create<ChessState>((set, get) => {
             blockedType: null,
             skipCaptureFor: null,
           });
+          get().checkGameEnd();
           return true;
         }
         return false;
@@ -234,6 +255,33 @@ export const useChessStore = create<ChessState>((set, get) => {
         }
       }
 
+      // --- Captura manual de rey ---
+      if (targetPiece?.type === "k") {
+        const moving = game.get(from as Square);
+        if (!moving) return false;
+        const activeHand =
+          moving.color === "w" ? cardStore.hand : cardStore.opponentHand;
+        const used = effectKey
+          ? activeHand.find((c) => c.effectKey === effectKey)
+          : undefined;
+        const hiddenKill = used?.hidden;
+        game.remove(to as Square);
+        game.remove(from as Square);
+        game.put(moving, to as Square);
+        const nextTurn = moving.color === "w" ? "b" : "w";
+        set({
+          board: game.board() as SquarePiece[][],
+          turn: nextTurn,
+          lastMove: { from, to },
+          winner: hiddenKill ? moving.color : null,
+        });
+        if (used && effectKey && effectKey !== "noCaptureNextTurn") {
+          cardStore.discardCard(used.id);
+          cardStore.selectCard("");
+        }
+        return true;
+      }
+
       // --- 5) Efecto kingFreeCastle ---
       if (effectKey === "kingFreeCastle" && piece.type === "k") {
         const home: Square = piece.color === "w" ? "e1" : "e8";
@@ -256,6 +304,7 @@ export const useChessStore = create<ChessState>((set, get) => {
             turn: currentTurn,
             lastMove: { from, to: home },
           });
+          get().checkGameEnd();
           return true;
         }
         return false;
@@ -282,6 +331,7 @@ export const useChessStore = create<ChessState>((set, get) => {
           lastMove: { from, to },
           skipCaptureFor: opponent,
         });
+        get().checkGameEnd();
         return true;
       }
 
@@ -483,6 +533,7 @@ export const useChessStore = create<ChessState>((set, get) => {
           turn: nt,
           lastMove: { from, to },
         });
+        get().checkGameEnd();
         return true;
       }
 
@@ -522,11 +573,13 @@ export const useChessStore = create<ChessState>((set, get) => {
         }
       }
 
+      get().checkGameEnd();
+
       return true;
-      } catch (e) {
-        console.error(e);
-        set({ notification: `Error: ${(e as Error).message}` });
-        return false;
+    } catch (e) {
+      console.error(e);
+      set({ notification: `Error: ${(e as Error).message}` });
+      return false;
       }
     },
 
@@ -556,6 +609,7 @@ export const useChessStore = create<ChessState>((set, get) => {
 
       cs.discardCard(sel.id);
       cs.selectCard("");
+      get().checkGameEnd();
     },
 
     reset: () => {
@@ -571,6 +625,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         skipCaptureFor: null,
         notification: null,
         promotionRequest: null,
+        winner: null,
       });
     },
   };
