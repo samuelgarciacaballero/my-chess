@@ -31,24 +31,33 @@ const OnlineGame: React.FC = () => {
     const onMove = ({ from, to, effectKey }: { from: Square; to: Square; effectKey?: string }) => {
       useChessStore.getState().move(from, to, effectKey, true);
     };
-    const onCard = (data: { action: string; player: Color; id?: string }) => {
-      const cs = useCardStore.getState();
-      if (data.action === 'hiddenDraw') {
-        if (data.id) cs.discardCard(data.id);
-        cs.drawHiddenCard(data.player);
-      } else if (data.action === 'discard' && data.id) {
-        cs.discardCard(data.id);
+    const onBlock = ({ square, type, player }: { square: Square; type: 'normal' | 'rare'; player: Color }) => {
+      useChessStore.getState().applyBlock(square, player, type);
+    };
+    const onCard = (data: { action: string; player?: Color; id: string }) => {
+      if (data.action === 'hiddenDraw' && data.player) {
+        useCardStore.getState().discardCard(data.id);
+        useCardStore.getState().drawHiddenCard(data.player);
+      } else if (data.action === 'discard') {
+        useCardStore.getState().discardCard(data.id);
+      } else if (data.action === 'peace' && data.player) {
+        useChessStore.getState().activatePeaceTreaty(data.id, data.player, true);
+
       }
     };
 
     socket.on('waiting', onWaiting);
     socket.on('start', onStart);
     socket.on('move', onMove);
+    socket.on('block', onBlock);
     socket.on('card', onCard);
+
+
     return () => {
       socket.off('waiting', onWaiting);
       socket.off('start', onStart);
       socket.off('move', onMove);
+      socket.off('block', onBlock);
       socket.off('card', onCard);
 
     };

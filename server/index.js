@@ -39,6 +39,7 @@ io.on('connection', (socket) => {
     }
   });
 
+
   socket.on('card', (payload) => {
     const room = socket.data.room;
     if (room) {

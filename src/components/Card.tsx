@@ -108,6 +108,14 @@ const CardView: React.FC<CardProps> = ({
       }
       return;
     }
+    if (card.effectKey === 'noCaptureNextTurn') {
+      const ok = await confirm('¿Usar "Tratado de paz"?');
+      if (ok) {
+        useChessStore.getState().activatePeaceTreaty(card.id, player);
+
+      }
+      return;
+    }
     onSelect?.(card.id);
   };
 
