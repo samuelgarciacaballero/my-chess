@@ -24,6 +24,7 @@ const OnlineGame: React.FC = () => {
       const cardState = useCardStore.getState();
       cardState.reset(seed);
       cardState.setInitialFaceUp();
+
       useChessStore.getState().setOnline(socket, c);
       setPhase('playing');
     };
@@ -41,6 +42,7 @@ const OnlineGame: React.FC = () => {
         useCardStore.getState().discardCard(data.id);
       } else if (data.action === 'peace' && data.player) {
         useChessStore.getState().activatePeaceTreaty(data.id, data.player, true);
+
       }
     };
 
@@ -50,12 +52,14 @@ const OnlineGame: React.FC = () => {
     socket.on('block', onBlock);
     socket.on('card', onCard);
 
+
     return () => {
       socket.off('waiting', onWaiting);
       socket.off('start', onStart);
       socket.off('move', onMove);
       socket.off('block', onBlock);
       socket.off('card', onCard);
+
     };
   }, [socket]);
 

@@ -112,6 +112,7 @@ const CardView: React.FC<CardProps> = ({
       const ok = await confirm('¿Usar "Tratado de paz"?');
       if (ok) {
         useChessStore.getState().activatePeaceTreaty(card.id, player);
+
       }
       return;
     }
