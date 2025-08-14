@@ -1,6 +1,8 @@
 /* src/components/Piece.css */
 .piece {
   transition: transform 0.3s ease;
+  font-family: "Noto Sans Symbols 2", "DejaVu Sans", "Segoe UI Symbol",
+               "Apple Symbols", "Symbola", sans-serif;
 }
 
 .piece.moving {
