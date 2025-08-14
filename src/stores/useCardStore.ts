@@ -314,6 +314,7 @@ export const useCardStore = create<CardState>((set) => ({
         ...state.graveyard,
         ...state.opponentHand.map((c) => ({ ...c, player: "b" as Color })),
       ],
+
     })),
 
   reset: () =>
@@ -326,4 +327,5 @@ export const useCardStore = create<CardState>((set) => ({
       hasFirstCapture: false,
       selectedCard: null,
     })),
+
 }));

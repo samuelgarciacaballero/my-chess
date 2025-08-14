@@ -36,6 +36,7 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
       drawSpecificToHand(selectedCardId);
     } else {
       drawSpecificToOpponent(selectedCardId);
+
     }
   };
 
@@ -74,6 +75,9 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
       </button>
       <button onClick={toggleFullView}>
         {fullView ? 'Salir vista completa' : 'Vista completa'}
+      </button>{' '}
+      <button onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}>
+        {theme === 'dark' ? '☀️ Claro' : '🌙 Oscuro'}
       </button>
       <button onClick={toggleLeftHanded}>
         {leftHanded ? 'Modo diestros' : 'Modo zurdos'}
@@ -106,6 +110,7 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
         </select>
         <button onClick={handleAddCard}>Añadir</button>
       </div>
+
     </div>
   );
 };

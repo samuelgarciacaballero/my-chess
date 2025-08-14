@@ -7,6 +7,7 @@ import './Card.css';
 import cardBack from '../assets/card-back.jpeg';
 import { useConfirmStore } from '../stores/useConfirmStore';
 
+
 interface CardProps {
   card: Card;
   isSelected: boolean;
@@ -17,6 +18,7 @@ interface CardProps {
   player: 'w' | 'b';
   faceDown?: boolean;
   fullView?: boolean;
+
 }
 
 const CardView: React.FC<CardProps> = ({
@@ -35,6 +37,7 @@ const CardView: React.FC<CardProps> = ({
   const confirm = useConfirmStore((s) => s.show);
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
   const timer = useRef<number>();
+
 
   const handleDiscard = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -64,6 +67,7 @@ const CardView: React.FC<CardProps> = ({
           margin: '0.5rem',
         }}
       />
+
     );
   }
 
@@ -95,6 +99,7 @@ const CardView: React.FC<CardProps> = ({
       if (ok) {
         discardCard(card.id);
         drawHiddenCard(player);
+
       }
       return;
     }
@@ -107,6 +112,7 @@ const CardView: React.FC<CardProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
+
       className={cls}
       style={{ backgroundColor: bgColor }}
     >
