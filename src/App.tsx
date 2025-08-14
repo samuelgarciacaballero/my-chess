@@ -13,6 +13,7 @@ import { useChessStore } from "./stores/useChessStore";
 import { useSettingsStore } from "./stores/useSettingsStore";
 import PromotionModal from "./components/PromotionModal";
 import CustomDragLayer from "./components/CustomDragLayer";
+import VictoryPanel from "./components/VictoryPanel";
 import "./App.css";
 // import { WHITE } from "chess.js";
 
@@ -24,6 +25,7 @@ const App: React.FC = () => {
   const turn = useChessStore((s) => s.turn);
   const localMultiplayer = useSettingsStore((s) => s.localMultiplayer);
   const fullView = useSettingsStore((s) => s.fullView);
+  const leftHanded = useSettingsStore((s) => s.leftHanded);
   const [devMode, setDevMode] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -54,27 +56,11 @@ const App: React.FC = () => {
       <Notification />
       <CustomDragLayer />
 
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <header style={{ textAlign: "center" }}>
         <h1>Magic Chess</h1>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button
-            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-          >
-            {theme === "dark" ? "☀️ Claro" : "🌙 Oscuro"}
-          </button>
-          <button onClick={() => setDevMode((d) => !d)}>
-            {devMode ? "🔒 Salir Dev Mode" : "🔧 Entrar Dev Mode"}
-          </button>
-        </div>
       </header>
 
-      {devMode && <DevPanel />}
+      {devMode && <DevPanel theme={theme} setTheme={setTheme} />}
 
       <TurnIndicator />
 
@@ -88,37 +74,44 @@ const App: React.FC = () => {
 
       <div className="board-area">
         {!fullView && initialFaceUp && (
-          <div className="initial-card">
+          <div className={`initial-card ${leftHanded ? 'right' : 'left'}`}>
             <FaceUpCard card={initialFaceUp} />
           </div>
         )}
         {fullView && (
-          <div className="left-panel">
+          <div className={`hand-panel ${leftHanded ? 'right' : 'left'}`}>
             <Hand
               player={localMultiplayer ? (turn === "w" ? "b" : "w") : "b"}
-              position="full"
+              position="full-top"
               readOnly
             />
             {initialFaceUp && <FaceUpCard card={initialFaceUp} small />}
             <Hand
               player={localMultiplayer ? turn : "w"}
-              position="full"
+              position="full-bottom"
             />
           </div>
         )}
         <Board rotated={localMultiplayer && turn === "b"} />
-        <div className="side-piles">
+        <div className={`side-piles ${leftHanded ? 'left' : 'right'}`}>
           <DeckPile />
           <Graveyard />
         </div>
       </div>
       <PromotionModal />
+      <VictoryPanel />
       {!fullView && (
         <Hand
           player={localMultiplayer ? turn : "w"}
           position="bottom"
         />
       )}
+      <button
+        className="dev-toggle-button"
+        onClick={() => setDevMode((d) => !d)}
+      >
+        {devMode ? "🔒 Cerrar Dev" : "🔧 Abrir Dev"}
+      </button>
     </div>
   );
 };

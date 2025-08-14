@@ -8,7 +8,13 @@ const Graveyard: React.FC = () => {
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <div style={{ position: 'relative', width: 80, height: 120 }}>
+      <div
+        style={{
+          position: 'relative',
+          width: 'calc(var(--square) * 8 / 3)',
+          height: 'calc(var(--square) * 4)',
+        }}
+      >
         <img
           src={cardBack}
           alt="Cementerio"

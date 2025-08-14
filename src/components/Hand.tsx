@@ -1,12 +1,12 @@
 // src/components/Hand.tsx
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useCardStore } from '../stores/useCardStore';
 import CardView from './Card';
 import './Hand.css';
 
 interface HandProps {
   player: 'w' | 'b';
-  position: 'top' | 'bottom' | 'full';
+  position: 'top' | 'bottom' | 'full-top' | 'full-bottom';
   readOnly?: boolean;
 }
 
@@ -15,17 +15,8 @@ const Hand: React.FC<HandProps> = ({ player, position, readOnly }) => {
     player === 'w' ? s.hand : s.opponentHand
   );
   const selectedCard = useCardStore((s) => s.selectedCard);
-  const drawFn = useCardStore((s) =>
-    player === 'w' ? s.drawCard : s.drawOpponentCard
-  );
   const selectCard = useCardStore((s) => s.selectCard);
-
-  // Roba la carta inicial solo si la mano está vacía
-  useEffect(() => {
-    if (hand.length === 0) {
-      drawFn();
-    }
-  }, [drawFn, hand.length]);
+  // No se roba automáticamente al descartar
 
   return (
     <div className={`hand ${position}`}>
@@ -36,7 +27,15 @@ const Hand: React.FC<HandProps> = ({ player, position, readOnly }) => {
           isSelected={!readOnly && selectedCard?.id === card.id}
           onSelect={readOnly ? undefined : selectCard}
           readOnly={readOnly}
-          showRarity={position !== 'full'}
+          showRarity={
+            position !== 'full-top' && position !== 'full-bottom'
+          }
+          showDescription={
+            position !== 'full-top' && position !== 'full-bottom'
+          }
+          player={player}
+          faceDown={readOnly && card.hidden}
+          fullView={position === 'full-top' || position === 'full-bottom'}
         />
       ))}
     </div>

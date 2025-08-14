@@ -9,6 +9,10 @@ interface SettingsState {
   fullView: boolean;
   /** Toggle full-view layout */
   toggleFullView: () => void;
+  /** Whether layout is flipped for left-handed mode */
+  leftHanded: boolean;
+  /** Toggle left-handed layout */
+  toggleLeftHanded: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -17,5 +21,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     set((s) => ({ localMultiplayer: !s.localMultiplayer })),
   fullView: false,
   toggleFullView: () => set((s) => ({ fullView: !s.fullView })),
+  leftHanded: false,
+  toggleLeftHanded: () => set((s) => ({ leftHanded: !s.leftHanded })),
 }));
 
