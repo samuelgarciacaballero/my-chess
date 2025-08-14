@@ -127,6 +127,7 @@ interface ChessState {
   applyBlock: (sq: Square, by: Color, type: 'normal' | 'rare') => void;
   activatePeaceTreaty: (id: string, player: Color, remote?: boolean) => void;
   useDejavu: (id: string, player: Color, remote?: boolean) => Promise<void>;
+
   reset: () => void;
 }
 
@@ -680,12 +681,38 @@ export const useChessStore = create<ChessState>((set, get) => {
         blockedType: null,
         skipCaptureFor: null,
       });
+
       get().checkGameEnd();
       if (!remote) {
         const sock = get().socket;
         const pc = get().playerColor;
         if (sock && pc === player) {
           sock.emit('card', { action: 'dejavu', player, id });
+        }
+      }
+    },
+
+    applyBlock: (sq: Square, by: Color, type: 'normal' | 'rare') => {
+      const st = get();
+      set({
+        blockedSquare: sq,
+        blockedBy: by,
+        blockedType: type,
+        board: st.game.board() as SquarePiece[][],
+      });
+    },
+
+    activatePeaceTreaty: (id: string, player: Color, remote = false) => {
+      const cs = useCardStore.getState();
+      cs.discardCard(id);
+      cs.selectCard("");
+      const skipFor: Color = player === 'w' ? 'b' : 'w';
+      set({ skipCaptureFor: skipFor });
+      if (!remote) {
+        const sock = get().socket;
+        const pc = get().playerColor;
+        if (sock && pc === player) {
+          sock.emit('card', { action: 'peace', player, id });
         }
       }
     },

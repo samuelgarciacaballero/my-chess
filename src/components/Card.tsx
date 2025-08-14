@@ -119,6 +119,7 @@ const CardView: React.FC<CardProps> = ({
       const ok = await confirm('¿Usar "DEJAVÚ"?');
       if (ok) {
         useChessStore.getState().useDejavu(card.id, player);
+
       }
       return;
     }
