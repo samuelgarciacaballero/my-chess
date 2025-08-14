@@ -26,6 +26,7 @@ io.on('connection', (socket) => {
       const seed = Math.floor(Math.random() * 1e9);
       white.emit('start', { color: 'w', seed });
       black.emit('start', { color: 'b', seed });
+
     } else {
       socket.emit('full');
     }
@@ -44,6 +45,7 @@ io.on('connection', (socket) => {
       socket.to(room).emit('card', payload);
     }
   });
+
 });
 
 const PORT = process.env.PORT || 3001;

@@ -24,6 +24,7 @@ const OnlineGame: React.FC = () => {
       const cardState = useCardStore.getState();
       cardState.reset(seed);
       cardState.setInitialFaceUp();
+
       useChessStore.getState().setOnline(socket, c);
       setPhase('playing');
     };
@@ -40,16 +41,19 @@ const OnlineGame: React.FC = () => {
       }
     };
 
+
     socket.on('waiting', onWaiting);
     socket.on('start', onStart);
     socket.on('move', onMove);
     socket.on('card', onCard);
+
 
     return () => {
       socket.off('waiting', onWaiting);
       socket.off('start', onStart);
       socket.off('move', onMove);
       socket.off('card', onCard);
+
     };
   }, [socket]);
 
