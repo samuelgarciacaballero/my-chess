@@ -36,14 +36,16 @@ const cardPool: Card[] = [
   {
     id: "boquete",
     name: "Boquete",
-    description: "Bloqueas una casilla durante el turno del rival. Ninguna ficha puede ocupar esa casilla.",
+    description:
+      "Bloqueas una casilla durante el turno del rival. Ninguna ficha puede ocupar esa casilla.",
     rarity: "normal",
     effectKey: "blockSquare",
   },
   {
     id: "bqr",
     name: "Boquete (raro)",
-    description: "Bloqueas una casilla durante el turno del rival. Ninguna ficha puede caer ni pasar por encima",
+    description:
+      "Bloqueas una casilla durante el turno del rival. Ninguna ficha puede caer ni pasar por encima",
     rarity: "rare",
     effectKey: "blockSquareRare",
   },
@@ -99,7 +101,8 @@ const cardPool: Card[] = [
   {
     id: "ocultas",
     name: "Artes Ocultas",
-    description: "Al lanzar esta carta robas otra que no es visible para el rival",
+    description:
+      "Al lanzar esta carta robas otra que no es visible para el rival",
     rarity: "mythic",
     effectKey: "hiddenDraw",
   },
@@ -112,13 +115,13 @@ const cardPool: Card[] = [
   // },
 ];
 
-const rarityCounts: Record<Card["rarity"], number> = {
-
-  normal: 6,
-  rare: 5,
-  epic: 4,
-  mythic: 3,
+// Number of copies each card should have in the deck based on rarity
+const rarityCopies: Record<Card["rarity"], number> = {
+  normal: 4,
+  rare: 3,
+  epic: 2,
   legendary: 2,
+  mythic: 1,
 };
 
 function shuffle<T>(array: T[]): T[] {
@@ -131,26 +134,14 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 function buildDeck(): Card[] {
-  const byRarity: Record<Card["rarity"], Card[]> = {
-    normal: [],
-    rare: [],
-    epic: [],
-    mythic: [],
-    legendary: [],
-  };
-  cardPool.forEach((c) => byRarity[c.rarity].push(c));
   const deck: Card[] = [];
-  (Object.keys(rarityCounts) as Card["rarity"][]).forEach((rarity) => {
-    const cards = byRarity[rarity];
-    const needed = rarityCounts[rarity];
-    if (cards.length === 0) return;
-    for (let i = 0; i < needed; i++) {
-      const template = cards[i % cards.length];
-      deck.push({ ...template, id: `${template.id}-${i}` });
+  cardPool.forEach((c) => {
+    const copies = rarityCopies[c.rarity];
+    for (let i = 0; i < copies; i++) {
+      deck.push({ ...c, id: `${c.id}-${i}` });
     }
   });
   return shuffle(deck);
-
 }
 
 export type GraveyardEntry = Card & { player: Color };
@@ -193,7 +184,6 @@ export const useCardStore = create<CardState>((set) => ({
       if (state.deck.length === 0) return {};
       const [card, ...rest] = state.deck;
       return { initialFaceUp: card, deck: rest };
-
     }),
 
   drawCard: () =>
@@ -202,17 +192,14 @@ export const useCardStore = create<CardState>((set) => ({
       if (state.deck.length === 0) return {};
       const [card, ...rest] = state.deck;
       return { hand: [...state.hand, card], deck: rest };
-
     }),
 
   drawOpponentCard: () =>
     set((state) => {
-      if (!state.hasFirstCapture || state.opponentHand.length >= 3)
-        return {};
+      if (!state.hasFirstCapture || state.opponentHand.length >= 3) return {};
       if (state.deck.length === 0) return {};
       const [card, ...rest] = state.deck;
       return { opponentHand: [...state.opponentHand, card], deck: rest };
-
     }),
 
   drawHiddenCard: (player) =>
@@ -225,7 +212,10 @@ export const useCardStore = create<CardState>((set) => ({
         return { hand: [...state.hand, hiddenCard], deck: rest };
       } else {
         if (state.opponentHand.length >= 3) return {};
-        return { opponentHand: [...state.opponentHand, hiddenCard], deck: rest };
+        return {
+          opponentHand: [...state.opponentHand, hiddenCard],
+          deck: rest,
+        };
       }
     }),
 
@@ -237,13 +227,12 @@ export const useCardStore = create<CardState>((set) => ({
       const player: Color | undefined = fromHand
         ? "w"
         : fromOpp
-        ? "b"
-        : undefined;
+          ? "b"
+          : undefined;
       return {
         hand: state.hand.filter((c) => c.id !== id),
         opponentHand: state.opponentHand.filter((c) => c.id !== id),
-        selectedCard:
-          state.selectedCard?.id === id ? null : state.selectedCard,
+        selectedCard: state.selectedCard?.id === id ? null : state.selectedCard,
         graveyard:
           card && player
             ? [...state.graveyard, { ...card, player }]
@@ -314,7 +303,6 @@ export const useCardStore = create<CardState>((set) => ({
         ...state.graveyard,
         ...state.opponentHand.map((c) => ({ ...c, player: "b" as Color })),
       ],
-
     })),
 
   reset: () =>
@@ -327,5 +315,4 @@ export const useCardStore = create<CardState>((set) => ({
       hasFirstCapture: false,
       selectedCard: null,
     })),
-
 }));
