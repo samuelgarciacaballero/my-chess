@@ -36,7 +36,7 @@ const CardView: React.FC<CardProps> = ({
   const drawHiddenCard = useCardStore((s) => s.drawHiddenCard);
   const confirm = useConfirmStore((s) => s.show);
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
-  const timer = useRef<number>();
+  const timer = useRef<number | null>(null);
 
 
   const handleDiscard = async (e: React.MouseEvent) => {
@@ -88,7 +88,9 @@ const CardView: React.FC<CardProps> = ({
   };
 
   const handleMouseLeave = () => {
-    window.clearTimeout(timer.current);
+    if (timer.current !== null) {
+      window.clearTimeout(timer.current);
+    }
     setTooltip(null);
   };
 
