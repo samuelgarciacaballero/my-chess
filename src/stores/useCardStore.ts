@@ -313,4 +313,5 @@ export const useCardStore = create<CardState>((set) => ({
       hasFirstCapture: false,
       selectedCard: null,
     })),
+
 }));

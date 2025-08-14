@@ -36,6 +36,7 @@ const Hand: React.FC<HandProps> = ({ player, position, readOnly }) => {
           player={player}
           faceDown={readOnly && card.hidden}
           fullView={position === 'full-top' || position === 'full-bottom'}
+
         />
       ))}
     </div>
