@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { Chess } from "chess.js";
 import type { Piece, Color, Square, Move, PieceSymbol } from "chess.js";
 import { useCardStore } from "./useCardStore";
+import { useConfirmStore } from "./useConfirmStore";
 
 export interface LastMove {
   from: Square | null;
@@ -101,13 +102,16 @@ interface ChessState {
 
   /** Resultado final de la partida */
   winner: Color | 'draw' | null;
+  /** Comprueba si la partida ha terminado */
+  checkGameEnd: () => void;
+
 
   /** Petición de promoción pendiente, o null si no hay */
   promotionRequest: PromotionRequest | null;
   /** Selecciona pieza de promoción tras petición */
   selectPromotion: (pieceType: PieceSymbol) => void;
 
-  move: (from: Square, to: Square, effectKey?: string) => boolean;
+  move: (from: Square, to: Square, effectKey?: string) => Promise<boolean>;
   blockSquareAt: (sq: Square) => void;
   reset: () => void;
 }
@@ -130,6 +134,16 @@ export const useChessStore = create<ChessState>((set, get) => {
     notification: null,
     clearNotification: () => set({ notification: null }),
     winner: null,
+    checkGameEnd: () => {
+      const g = get().game;
+      if (g.isCheckmate()) {
+        const winner = g.turn() === 'w' ? 'b' : 'w';
+        set({ winner });
+      } else if (g.isDraw()) {
+        set({ winner: 'draw' });
+      }
+    },
+
 
     // --- PROMOCIÓN ---
     promotionRequest: null,
@@ -148,10 +162,11 @@ export const useChessStore = create<ChessState>((set, get) => {
         lastMove: { from, to },
         promotionRequest: null,
       });
+      get().checkGameEnd();
       // NOTA: aquí podrías añadir lógica extra como robo de carta, descartes, etc.
     },
 
-    move: (from, to, effectKey) => {
+    move: async (from, to, effectKey) => {
       try {
         const cardStore = useCardStore.getState();
         const currentTurn = get().turn;
@@ -187,9 +202,11 @@ export const useChessStore = create<ChessState>((set, get) => {
           currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
         const sel = activeHand.find((c) => c.effectKey === "undoTurn");
         if (!sel) return false;
-        if (
-          window.confirm("¿Deseas usar DEJAVÚ para deshacer tu último turno?")
-        ) {
+        const confirm = useConfirmStore.getState().show;
+        const ok = await confirm(
+          "¿Deseas usar DEJAVÚ para deshacer tu último turno?",
+        );
+        if (ok) {
           game.undo(); // deshacer medio-turno (oponente)
           game.undo(); // deshacer tu turno
           // descartar carta
@@ -205,6 +222,7 @@ export const useChessStore = create<ChessState>((set, get) => {
             blockedType: null,
             skipCaptureFor: null,
           });
+          get().checkGameEnd();
           return true;
         }
         return false;
@@ -290,6 +308,7 @@ export const useChessStore = create<ChessState>((set, get) => {
             turn: currentTurn,
             lastMove: { from, to: home },
           });
+          get().checkGameEnd();
           return true;
         }
         return false;
@@ -316,6 +335,7 @@ export const useChessStore = create<ChessState>((set, get) => {
           lastMove: { from, to },
           skipCaptureFor: opponent,
         });
+        get().checkGameEnd();
         return true;
       }
 
@@ -517,6 +537,7 @@ export const useChessStore = create<ChessState>((set, get) => {
           turn: nt,
           lastMove: { from, to },
         });
+        get().checkGameEnd();
         return true;
       }
 
@@ -556,14 +577,8 @@ export const useChessStore = create<ChessState>((set, get) => {
         }
       }
 
-      if (!get().winner) {
-        if (game.isCheckmate()) {
-          set({ winner: movedColor });
-        } else if (game.isDraw()) {
-          set({ winner: "draw" });
-        }
+      get().checkGameEnd();
 
-      }
 
       return true;
     } catch (e) {
@@ -599,6 +614,7 @@ export const useChessStore = create<ChessState>((set, get) => {
 
       cs.discardCard(sel.id);
       cs.selectCard("");
+      get().checkGameEnd();
     },
 
     reset: () => {

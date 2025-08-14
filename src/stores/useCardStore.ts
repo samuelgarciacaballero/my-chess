@@ -153,9 +153,11 @@ function buildDeck(): Card[] {
 
 }
 
+export type GraveyardEntry = Card & { player: Color };
+
 interface CardState {
   deck: Card[];
-  graveyard: Card[];
+  graveyard: GraveyardEntry[];
   hand: Card[];
   opponentHand: Card[];
   initialFaceUp: Card | null;
@@ -173,6 +175,7 @@ interface CardState {
   drawSpecificToHand: (id: string) => void;
   drawSpecificToOpponent: (id: string) => void;
   clearOpponentHand: () => void;
+  reset: () => void;
 }
 
 export const useCardStore = create<CardState>((set) => ({
@@ -228,15 +231,23 @@ export const useCardStore = create<CardState>((set) => ({
 
   discardCard: (id) =>
     set((state) => {
-      const card =
-        state.hand.find((c) => c.id === id) ||
-        state.opponentHand.find((c) => c.id === id);
+      const fromHand = state.hand.find((c) => c.id === id);
+      const fromOpp = state.opponentHand.find((c) => c.id === id);
+      const card = fromHand || fromOpp;
+      const player: Color | undefined = fromHand
+        ? "w"
+        : fromOpp
+        ? "b"
+        : undefined;
       return {
         hand: state.hand.filter((c) => c.id !== id),
         opponentHand: state.opponentHand.filter((c) => c.id !== id),
         selectedCard:
           state.selectedCard?.id === id ? null : state.selectedCard,
-        graveyard: card ? [...state.graveyard, card] : state.graveyard,
+        graveyard:
+          card && player
+            ? [...state.graveyard, { ...card, player }]
+            : state.graveyard,
       };
     }),
 
@@ -299,6 +310,22 @@ export const useCardStore = create<CardState>((set) => ({
   clearOpponentHand: () =>
     set((state) => ({
       opponentHand: [],
-      graveyard: [...state.graveyard, ...state.opponentHand],
+      graveyard: [
+        ...state.graveyard,
+        ...state.opponentHand.map((c) => ({ ...c, player: "b" as Color })),
+      ],
+
     })),
+
+  reset: () =>
+    set(() => ({
+      deck: buildDeck(),
+      graveyard: [],
+      hand: [],
+      opponentHand: [],
+      initialFaceUp: null,
+      hasFirstCapture: false,
+      selectedCard: null,
+    })),
+
 }));

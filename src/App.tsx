@@ -14,6 +14,8 @@ import { useSettingsStore } from "./stores/useSettingsStore";
 import PromotionModal from "./components/PromotionModal";
 import CustomDragLayer from "./components/CustomDragLayer";
 import VictoryPanel from "./components/VictoryPanel";
+import ConfirmModal from "./components/ConfirmModal";
+
 import "./App.css";
 // import { WHITE } from "chess.js";
 
@@ -55,6 +57,7 @@ const App: React.FC = () => {
       {/* Notificaciones flotantes y capa de arrastre personalizada */}
       <Notification />
       <CustomDragLayer />
+      <ConfirmModal />
 
       <header style={{ textAlign: "center" }}>
         <h1>Magic Chess</h1>
