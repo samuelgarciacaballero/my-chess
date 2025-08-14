@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useCardStore } from '../stores/useCardStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { useChessStore } from '../stores/useChessStore';
 
 interface DevPanelProps {
   theme: 'light' | 'dark';
@@ -16,6 +17,7 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
   // Nuevas acciones dev:
   const drawSpecificToHand = useCardStore(s => s.drawSpecificToHand);
   const drawSpecificToOpponent = useCardStore(s => s.drawSpecificToOpponent);
+  const socket = useChessStore(s => s.socket);
 
   const localMultiplayer = useSettingsStore(s => s.localMultiplayer);
   const toggleLocalMultiplayer = useSettingsStore(s => s.toggleLocalMultiplayer);
@@ -36,7 +38,9 @@ const DevPanel: React.FC<DevPanelProps> = ({ theme, setTheme }) => {
       drawSpecificToHand(selectedCardId);
     } else {
       drawSpecificToOpponent(selectedCardId);
-
+    }
+    if (socket) {
+      socket.emit('card', { action: 'devAdd', target: targetPlayer, id: selectedCardId });
     }
   };
 

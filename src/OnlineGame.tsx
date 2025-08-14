@@ -24,7 +24,6 @@ const OnlineGame: React.FC = () => {
       const cardState = useCardStore.getState();
       cardState.reset(seed);
       cardState.setInitialFaceUp();
-
       useChessStore.getState().setOnline(socket, c);
       setPhase('playing');
     };
@@ -34,7 +33,8 @@ const OnlineGame: React.FC = () => {
     const onBlock = ({ square, type, player }: { square: Square; type: 'normal' | 'rare'; player: Color }) => {
       useChessStore.getState().applyBlock(square, player, type);
     };
-    const onCard = (data: { action: string; player?: Color; id: string }) => {
+    const onCard = (data: { action: string; player?: Color; id: string; target?: Color }) => {
+
       if (data.action === 'hiddenDraw' && data.player) {
         useCardStore.getState().discardCard(data.id);
         useCardStore.getState().drawHiddenCard(data.player);
@@ -42,6 +42,15 @@ const OnlineGame: React.FC = () => {
         useCardStore.getState().discardCard(data.id);
       } else if (data.action === 'peace' && data.player) {
         useChessStore.getState().activatePeaceTreaty(data.id, data.player, true);
+      } else if (data.action === 'dejavu' && data.player) {
+        useChessStore.getState().useDejavu(data.id, data.player, true);
+      } else if (data.action === 'devAdd' && data.target) {
+        const pc = useChessStore.getState().playerColor;
+        if (pc === data.target) {
+          useCardStore.getState().drawSpecificToHand(data.id);
+        } else {
+          useCardStore.getState().drawSpecificToOpponent(data.id);
+        }
 
       }
     };

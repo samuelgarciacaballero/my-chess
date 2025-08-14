@@ -96,6 +96,8 @@ interface ChessState {
   blockedType: "normal" | "rare" | null;
   /** Si no-capture está activo: el color que no puede capturar */
   skipCaptureFor: Color | null;
+  /** Si el jugador puede enrocar tras usar Vuelta al castillo */
+  freeCastleFor: Color | null;
   /** Mensaje de aviso temporal (o null si no hay) */
   notification: string | null;
   /** Limpia el mensaje de aviso */
@@ -124,6 +126,8 @@ interface ChessState {
   blockSquareAt: (sq: Square) => void;
   applyBlock: (sq: Square, by: Color, type: 'normal' | 'rare') => void;
   activatePeaceTreaty: (id: string, player: Color, remote?: boolean) => void;
+  useDejavu: (id: string, player: Color, remote?: boolean) => Promise<void>;
+
   reset: () => void;
 }
 
@@ -142,6 +146,7 @@ export const useChessStore = create<ChessState>((set, get) => {
     blockedBy: null,
     blockedType: null,
     skipCaptureFor: null,
+    freeCastleFor: null,
     notification: null,
     clearNotification: () => set({ notification: null }),
     winner: null,
@@ -212,39 +217,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         return false;
       }
 
-      // --- 3) Efecto undoTurn (DEJAVÚ) ---
-      if (effectKey === "undoTurn") {
-        const activeHand =
-          currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
-        const sel = activeHand.find((c) => c.effectKey === "undoTurn");
-        if (!sel) return false;
-        const confirm = useConfirmStore.getState().show;
-        const ok = await confirm(
-          "¿Deseas usar DEJAVÚ para deshacer tu último turno?",
-        );
-        if (ok) {
-          game.undo(); // deshacer medio-turno (oponente)
-          game.undo(); // deshacer tu turno
-          // descartar carta
-          cardStore.discardCard(sel.id);
-          cardStore.selectCard("");
-          // reset parcial
-          set({
-            board: game.board() as SquarePiece[][],
-            turn: game.turn(),
-            lastMove: { from: null, to: null },
-            blockedSquare: null,
-            blockedBy: null,
-            blockedType: null,
-            skipCaptureFor: null,
-          });
-          get().checkGameEnd();
-          return true;
-        }
-        return false;
-      }
-
-      // --- 4) Bloqueos de casilla normal/rare ---
+      // --- 3) Bloqueos de casilla normal/rare ---
       const { blockedSquare, blockedType } = get();
       if (to === blockedSquare) {
         set({ notification: "En esta casilla hay un boquete" });
@@ -270,6 +243,47 @@ export const useChessStore = create<ChessState>((set, get) => {
           }
           c += stepC;
           r += stepR;
+        }
+      }
+
+      // --- 4) Enroque tras Vuelta al castillo ---
+      if (get().freeCastleFor === currentTurn && piece.type === 'k') {
+        const c1 = fileToCol(from[0]),
+          r1 = rankToRow(+from[1]);
+        const c2 = fileToCol(to[0]),
+          r2 = rankToRow(+to[1]);
+        if (r1 === r2 && Math.abs(c2 - c1) === 2) {
+          const rookFrom = c2 > c1 ? (`h${from[1]}` as Square) : (`a${from[1]}` as Square);
+          const rookTo = c2 > c1 ? (`f${from[1]}` as Square) : (`d${from[1]}` as Square);
+          const rook = game.get(rookFrom as Square);
+          if (rook?.type === 'r' && rook.color === piece.color) {
+            game.remove(from as Square);
+            game.remove(rookFrom as Square);
+            game.put({ type: 'k', color: piece.color }, to as Square);
+            game.put(rook, rookTo as Square);
+            const nextTurn: Color = piece.color === 'w' ? 'b' : 'w';
+            const update: Partial<ChessState> = {
+              board: game.board() as SquarePiece[][],
+              turn: nextTurn,
+              lastMove: { from, to },
+              freeCastleFor: null,
+            };
+            const prevBlockedBy = get().blockedBy;
+            if (get().blockedSquare && prevBlockedBy === nextTurn)
+              update.blockedSquare = null;
+            set(update);
+            const cardStore = useCardStore.getState();
+            const me = get().playerColor;
+            if (!me || piece.color === me) cardStore.drawCard();
+            else cardStore.drawOpponentCard();
+            const sock = get().socket;
+            const pc = get().playerColor;
+            if (!remote && sock && pc === piece.color) {
+              sock.emit('move', { from, to });
+            }
+            get().checkGameEnd();
+            return true;
+          }
         }
       }
 
@@ -323,6 +337,7 @@ export const useChessStore = create<ChessState>((set, get) => {
             board: game.board() as SquarePiece[][],
             turn: currentTurn,
             lastMove: { from, to: home },
+            freeCastleFor: currentTurn,
           });
           const sock = get().socket;
           const pc = get().playerColor;
@@ -648,6 +663,60 @@ export const useChessStore = create<ChessState>((set, get) => {
       }
     },
 
+    useDejavu: async (id: string, player: Color, remote = false) => {
+      const confirm = useConfirmStore.getState().show;
+      const ok = await confirm('¿Deseas usar DEJAVÚ para deshacer tu último turno?');
+      if (!ok) return;
+      game.undo();
+      game.undo();
+      const cs = useCardStore.getState();
+      cs.discardCard(id);
+      cs.selectCard('');
+      set({
+        board: game.board() as SquarePiece[][],
+        turn: game.turn(),
+        lastMove: { from: null, to: null },
+        blockedSquare: null,
+        blockedBy: null,
+        blockedType: null,
+        skipCaptureFor: null,
+      });
+
+      get().checkGameEnd();
+      if (!remote) {
+        const sock = get().socket;
+        const pc = get().playerColor;
+        if (sock && pc === player) {
+          sock.emit('card', { action: 'dejavu', player, id });
+        }
+      }
+    },
+
+    applyBlock: (sq: Square, by: Color, type: 'normal' | 'rare') => {
+      const st = get();
+      set({
+        blockedSquare: sq,
+        blockedBy: by,
+        blockedType: type,
+        board: st.game.board() as SquarePiece[][],
+      });
+    },
+
+    activatePeaceTreaty: (id: string, player: Color, remote = false) => {
+      const cs = useCardStore.getState();
+      cs.discardCard(id);
+      cs.selectCard("");
+      const skipFor: Color = player === 'w' ? 'b' : 'w';
+      set({ skipCaptureFor: skipFor });
+      if (!remote) {
+        const sock = get().socket;
+        const pc = get().playerColor;
+        if (sock && pc === player) {
+          sock.emit('card', { action: 'peace', player, id });
+        }
+      }
+    },
+
     reset: () => {
       const ng = new Chess();
       set({
@@ -659,6 +728,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         blockedBy: null,
         blockedType: null,
         skipCaptureFor: null,
+        freeCastleFor: null,
         notification: null,
         promotionRequest: null,
         winner: null,

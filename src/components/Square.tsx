@@ -11,9 +11,10 @@ interface SquareProps {
   row: number;
   col: number;
   children?: React.ReactNode;
+  rotated?: boolean;
 }
 
-const Square: React.FC<SquareProps> = ({ row, col, children }) => {
+const Square: React.FC<SquareProps> = ({ row, col, children, rotated }) => {
   const isLight = (row + col) % 2 === 0;
   const move = useChessStore(s => s.move);
   const blockSquareAt = useChessStore(s => s.blockSquareAt);
@@ -31,17 +32,19 @@ const Square: React.FC<SquareProps> = ({ row, col, children }) => {
   >({
     accept: "piece",
     drop: item => {
-      move(
-        toSquare(item.row, item.col) as ChessSquare,
-        toSquare(row, col) as ChessSquare,
-        selectedCard?.effectKey
-      );
+      const fromSq = rotated
+        ? toSquare(7 - item.row, 7 - item.col)
+        : toSquare(item.row, item.col);
+      const toSq = rotated
+        ? toSquare(7 - row, 7 - col)
+        : toSquare(row, col);
+      move(fromSq as ChessSquare, toSq as ChessSquare, selectedCard?.effectKey);
     },
     collect: m => ({ isOver: m.isOver(), canDrop: m.canDrop() }),
   });
 
   const highlight = isOver && canDrop ? " highlight" : "";
-  const sq = toSquare(row, col);
+  const sq = rotated ? toSquare(7 - row, 7 - col) : toSquare(row, col);
 
   // Resaltado de última jugada
   const isFrom = lastMove.from === sq;
