@@ -7,7 +7,7 @@ export type Card = {
   id: string;
   name: string;
   description: string;
-  rarity: "normal" | "rare" | "epic" | "mythic" | "legendary";
+  rarity: "normal" | "rare" | "legendary";
   effectKey: string;
   hidden?: boolean;
 };
@@ -54,7 +54,7 @@ const cardPool: Card[] = [
     id: "galope",
     name: "Galope Real",
     description: "La reina se mueve como caballo",
-    rarity: "epic",
+    rarity: "legendary",
     effectKey: "queenKnightMove",
   },
   {
@@ -104,7 +104,7 @@ const cardPool: Card[] = [
     name: "Artes Ocultas",
     description:
       "Al lanzar esta carta robas otra que no es visible para el rival",
-    rarity: "mythic",
+    rarity: "rare",
     effectKey: "hiddenDraw",
   },
   // {
@@ -120,9 +120,7 @@ const cardPool: Card[] = [
 const rarityCopies: Record<Card["rarity"], number> = {
   normal: 4,
   rare: 3,
-  epic: 2,
   legendary: 2,
-  mythic: 1,
 };
 
 function mulberry32(a: number) {
