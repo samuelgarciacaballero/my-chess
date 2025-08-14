@@ -3,11 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { useChessStore } from '../stores/useChessStore';
 import { useCardStore } from '../stores/useCardStore';
 
+
 const VictoryPanel: React.FC = () => {
   const winner = useChessStore((s) => s.winner);
   const reset = useChessStore((s) => s.reset);
   const cardReset = useCardStore((s) => s.reset);
   const setInitialFaceUp = useCardStore((s) => s.setInitialFaceUp);
+
   const [position, setPosition] = useState({
     x: window.innerWidth / 2,
     y: window.innerHeight / 2,
@@ -61,6 +63,7 @@ const VictoryPanel: React.FC = () => {
       >
         Reiniciar
       </button>
+
     </div>
   );
 };

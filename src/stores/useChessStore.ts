@@ -105,6 +105,7 @@ interface ChessState {
   /** Comprueba si la partida ha terminado */
   checkGameEnd: () => void;
 
+
   /** Petición de promoción pendiente, o null si no hay */
   promotionRequest: PromotionRequest | null;
   /** Selecciona pieza de promoción tras petición */
@@ -142,6 +143,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         set({ winner: 'draw' });
       }
     },
+
 
     // --- PROMOCIÓN ---
     promotionRequest: null,
@@ -265,6 +267,7 @@ export const useChessStore = create<ChessState>((set, get) => {
           ? activeHand.find((c) => c.effectKey === effectKey)
           : undefined;
         const hiddenKill = used?.hidden;
+
         game.remove(to as Square);
         game.remove(from as Square);
         game.put(moving, to as Square);
@@ -278,6 +281,7 @@ export const useChessStore = create<ChessState>((set, get) => {
         if (used && effectKey && effectKey !== "noCaptureNextTurn") {
           cardStore.discardCard(used.id);
           cardStore.selectCard("");
+
         }
         return true;
       }
@@ -574,6 +578,7 @@ export const useChessStore = create<ChessState>((set, get) => {
       }
 
       get().checkGameEnd();
+
 
       return true;
     } catch (e) {

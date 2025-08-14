@@ -7,6 +7,7 @@ import './Card.css';
 import cardBack from '../assets/card-back.jpeg';
 import { useConfirmStore } from '../stores/useConfirmStore';
 
+
 interface CardProps {
   card: Card;
   isSelected: boolean;
@@ -17,6 +18,7 @@ interface CardProps {
   player: 'w' | 'b';
   faceDown?: boolean;
   fullView?: boolean;
+
 }
 
 const CardView: React.FC<CardProps> = ({
@@ -35,6 +37,7 @@ const CardView: React.FC<CardProps> = ({
   const confirm = useConfirmStore((s) => s.show);
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
   const timer = useRef<number>();
+
 
   const handleDiscard = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -64,6 +67,7 @@ const CardView: React.FC<CardProps> = ({
           margin: '0.5rem',
         }}
       />
+
     );
   }
 
@@ -95,6 +99,7 @@ const CardView: React.FC<CardProps> = ({
       if (ok) {
         discardCard(card.id);
         drawHiddenCard(player);
+
       }
       return;
     }
@@ -107,6 +112,7 @@ const CardView: React.FC<CardProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
+
       className={cls}
       style={{ backgroundColor: bgColor }}
     >
@@ -120,23 +126,27 @@ const CardView: React.FC<CardProps> = ({
       <h4 className="card-title">{card.name}</h4>
       {showDescription && <p className="card-desc">{card.description}</p>}
       {showRarity && <small className="card-rarity">{card.rarity}</small>}
+
       {fullView && tooltip && (
         <div
           style={{
             position: 'fixed',
             top: tooltip.y + 8,
             left: tooltip.x + 8,
+
             backgroundColor: rarityColors[card.rarity],
             opacity: 0.85,
             padding: '0.5rem',
             borderRadius: 8,
             zIndex: 10000,
             maxWidth: 200,
+
             pointerEvents: 'none',
           }}
         >
           <p style={{ margin: 0 }}>{card.description}</p>
           <small style={{ display: 'block', marginTop: 4 }}>{card.rarity}</small>
+
         </div>
       )}
     </div>
