@@ -116,6 +116,13 @@ const CardView: React.FC<CardProps> = ({
       }
       return;
     }
+    if (card.effectKey === 'undoTurn') {
+      const ok = await confirm('¿Deseas usar "DEJAVÚ" y deshacer tu último turno?');
+      if (ok) {
+        useChessStore.getState().move('a1', 'a1', 'undoTurn');
+      }
+      return;
+    }
     onSelect?.(card.id);
   };
 

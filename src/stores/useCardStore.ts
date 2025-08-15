@@ -217,13 +217,20 @@ export const useCardStore = create<CardState>((set) => ({
       const [card, ...rest] = state.deck;
       const hiddenCard = { ...card, hidden: true };
       const me = useChessStore.getState().playerColor;
-      if (!me || player === me) {
-        if (state.hand.length >= 3) return {};
-        return { hand: [...state.hand, hiddenCard], deck: rest };
-      } else {
+      if (me) {
+        if (player === me) {
+          if (state.hand.length >= 3) return {};
+          return { hand: [...state.hand, hiddenCard], deck: rest };
+        }
         if (state.opponentHand.length >= 3) return {};
         return { opponentHand: [...state.opponentHand, hiddenCard], deck: rest };
       }
+      if (player === "w") {
+        if (state.hand.length >= 3) return {};
+        return { hand: [...state.hand, hiddenCard], deck: rest };
+      }
+      if (state.opponentHand.length >= 3) return {};
+      return { opponentHand: [...state.opponentHand, hiddenCard], deck: rest };
     }),
 
   discardCard: (id) =>
@@ -254,7 +261,21 @@ export const useCardStore = create<CardState>((set) => ({
         return { hasFirstCapture: true, initialFaceUp: null };
       }
       const me = useChessStore.getState().playerColor;
-      if (!me || captorColor === me) {
+      if (me) {
+        if (captorColor === me) {
+          return {
+            hasFirstCapture: true,
+            hand: [card],
+            initialFaceUp: null,
+          };
+        }
+        return {
+          hasFirstCapture: true,
+          opponentHand: [card],
+          initialFaceUp: null,
+        };
+      }
+      if (captorColor === "w") {
         return {
           hasFirstCapture: true,
           hand: [card],
