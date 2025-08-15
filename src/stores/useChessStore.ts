@@ -186,6 +186,41 @@ export const useChessStore = create<ChessState>((set, get) => {
         const currentTurn = get().turn;
         const playerColor = get().playerColor;
         if (!remote && playerColor && playerColor !== currentTurn) return false;
+
+        // --- Efecto directo: DEJAVÚ ---
+        if (effectKey === "undoTurn") {
+          const activeHand =
+            currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
+          const sel = activeHand.find((c) => c.effectKey === "undoTurn");
+          if (!sel) return false;
+
+          game.undo(); // deshacer medio-turno (oponente)
+          game.undo(); // deshacer tu turno
+
+          cardStore.discardCard(sel.id);
+          cardStore.selectCard("");
+
+          set({
+            board: game.board() as SquarePiece[][],
+            turn: game.turn(),
+            lastMove: { from: null, to: null },
+            blockedSquare: null,
+            blockedBy: null,
+            blockedType: null,
+            skipCaptureFor: null,
+          });
+          get().checkGameEnd();
+
+          const sock = get().socket;
+          const pc = get().playerColor;
+          if (!remote && sock && pc === currentTurn) {
+            sock.emit('move', { effectKey });
+            sock.emit('card', { action: 'discard', id: sel.id });
+          }
+
+          return true;
+        }
+
         const piece = game.get(from as Square);
         if (!piece || piece.color !== currentTurn) return false;
 
@@ -209,38 +244,6 @@ export const useChessStore = create<ChessState>((set, get) => {
         set({
           notification: "No puedes comer este turno por el tratado de paz",
         });
-        return false;
-      }
-
-      // --- 3) Efecto undoTurn (DEJAVÚ) ---
-      if (effectKey === "undoTurn") {
-        const activeHand =
-          currentTurn === "w" ? cardStore.hand : cardStore.opponentHand;
-        const sel = activeHand.find((c) => c.effectKey === "undoTurn");
-        if (!sel) return false;
-        const confirm = useConfirmStore.getState().show;
-        const ok = await confirm(
-          "¿Deseas usar DEJAVÚ para deshacer tu último turno?",
-        );
-        if (ok) {
-          game.undo(); // deshacer medio-turno (oponente)
-          game.undo(); // deshacer tu turno
-          // descartar carta
-          cardStore.discardCard(sel.id);
-          cardStore.selectCard("");
-          // reset parcial
-          set({
-            board: game.board() as SquarePiece[][],
-            turn: game.turn(),
-            lastMove: { from: null, to: null },
-            blockedSquare: null,
-            blockedBy: null,
-            blockedType: null,
-            skipCaptureFor: null,
-          });
-          get().checkGameEnd();
-          return true;
-        }
         return false;
       }
 
@@ -564,8 +567,13 @@ export const useChessStore = create<ChessState>((set, get) => {
       // --- 11) Robar carta si no fue bloqueo ---
       const me = get().playerColor;
       if (!effectUsed) {
-        if (!me || movedColor === me) cardStore.drawCard();
-        else cardStore.drawOpponentCard();
+        if (me) {
+          if (movedColor === me) cardStore.drawCard();
+          else cardStore.drawOpponentCard();
+        } else {
+          if (movedColor === "w") cardStore.drawCard();
+          else cardStore.drawOpponentCard();
+        }
       }
 
       // --- 12) Descartar carta usada ---
